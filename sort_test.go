@@ -123,6 +123,19 @@ func BenchmarkSortString1K(b *testing.B) {
 	}
 }
 
+func BenchmarkStableString1K(b *testing.B) {
+	b.StopTimer()
+	for i := 0; i < b.N; i++ {
+		data := make([]string, 1<<10)
+		for i := 0; i < len(data); i++ {
+			data[i] = strconv.Itoa(i ^ 0x2cc)
+		}
+		b.StartTimer()
+		Stable(StringSlice(data))
+		b.StopTimer()
+	}
+}
+
 func BenchmarkSortInt1K(b *testing.B) {
 	b.StopTimer()
 	for i := 0; i < b.N; i++ {
@@ -136,6 +149,19 @@ func BenchmarkSortInt1K(b *testing.B) {
 	}
 }
 
+func BenchmarkStableInt1K(b *testing.B) {
+	b.StopTimer()
+	for i := 0; i < b.N; i++ {
+		data := make([]int, 1<<10)
+		for i := 0; i < len(data); i++ {
+			data[i] = i ^ 0x2cc
+		}
+		b.StartTimer()
+		Stable(IntSlice(data))
+		b.StopTimer()
+	}
+}
+
 func BenchmarkSortInt64K(b *testing.B) {
 	b.StopTimer()
 	for i := 0; i < b.N; i++ {
@@ -145,6 +171,19 @@ func BenchmarkSortInt64K(b *testing.B) {
 		}
 		b.StartTimer()
 		Ints(data)
+		b.StopTimer()
+	}
+}
+
+func BenchmarkStableInt64K(b *testing.B) {
+	b.StopTimer()
+	for i := 0; i < b.N; i++ {
+		data := make([]int, 1<<16)
+		for i := 0; i < len(data); i++ {
+			data[i] = i ^ 0xcccc
+		}
+		b.StartTimer()
+		Stable(IntSlice(data))
 		b.StopTimer()
 	}
 }
@@ -362,6 +401,14 @@ func TestAdversary(t *testing.T) {
 // -------------------------------------------------------------------
 // Stable sorting
 
+func TestStableInts(t *testing.T) {
+	data := ints
+	Stable(IntSlice(data[0:]))
+	if !IntsAreSorted(data[0:]) {
+		t.Errorf("nsorted %v\n   got %v", ints, data)
+	}
+}
+
 func testRotation(t *testing.T, algo func(data Interface, a, m, b int), name string) {
 	data := []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 
@@ -391,11 +438,6 @@ func testRotation(t *testing.T, algo func(data Interface, a, m, b int), name str
 	}
 
 	t.Logf("%s: ok", name)
-}
-
-func TestRotation(t *testing.T) {
-	testRotation(t, RotateOptimal, "rotateOptimal")
-	testRotation(t, RotateSwap, "rotateSwap")
 }
 
 type intPairs []struct {
@@ -429,46 +471,32 @@ func (d intPairs) inOrder() bool {
 	return true
 }
 
-//
-// Ints
-//
-func testInts(t *testing.T, algo func(data Interface), name string) {
-	data := ints
-	algo(IntSlice(data[0:]))
-	if !IntsAreSorted(data[0:]) {
-		t.Errorf("%s\nsorted %v\n   got %v", name, ints, data)
-	}
-}
-
-func TestStableInts(t *testing.T) { testInts(t, Stable, "Stable") }
-
-//
-// Random
-//
-func testRandom(t *testing.T, algo func(data Interface), name string) {
+func testRandom(t *testing.T, multi bool) {
 	n := 1000000
 	if testing.Short() {
 		n /= 100
 	}
+	m := n / 100
+	if multi {
+		m = n * 10
+	}
 	data := make([]int, n)
 	for i := 0; i < len(data); i++ {
-		data[i] = rand.Intn(100)
+		data[i] = rand.Intn(m)
 	}
 	if IntsAreSorted(data) {
 		t.Fatalf("terrible rand.rand")
 	}
 	Stable(IntSlice(data))
 	if !IntsAreSorted(data) {
-		t.Errorf("%s sort didn't sort - 1M ints", name)
+		t.Errorf("Stable didn't sort %d ints taken from %d", n, m)
 	}
 }
 
-func TestStableRandom(t *testing.T) { testRandom(t, Stable, "Stable") }
+func TestStableUnique(t *testing.T)   { testRandom(t, false) }
+func TestStableMultiple(t *testing.T) { testRandom(t, true) }
 
-//
-// Stability
-//
-func testStability(t *testing.T, algo func(data Interface), name string) {
+func TestStability(t *testing.T) {
 	n, m := 100000, 1000
 	if testing.Short() {
 		n, m = 1000, 100
@@ -483,22 +511,22 @@ func testStability(t *testing.T, algo func(data Interface), name string) {
 		t.Fatalf("terrible rand.rand")
 	}
 	data.initB()
-	algo(data)
+	Stable(data)
 	if !IsSorted(data) {
-		t.Errorf("%s didn't sort - %d ints", name, n)
+		t.Errorf("Stable didn't sort %d ints", n)
 	}
 	if !data.inOrder() {
-		t.Errorf("%s wasn't stable - %d ints", name, n)
+		t.Errorf("Stable wasn't stable on %d ints", n)
 	}
 
 	// already sorted
 	data.initB()
-	algo(data)
+	Stable(data)
 	if !IsSorted(data) {
-		t.Errorf("%s didn't sort - %d ints", name, n)
+		t.Errorf("Stable shuffeled sorted %d ints (order)", n)
 	}
 	if !data.inOrder() {
-		t.Errorf("%s wasn't stable - %d ints", name, n)
+		t.Errorf("Stable shuffeled sorted %d ints (stability)", n)
 	}
 
 	// sorted reversed
@@ -506,17 +534,13 @@ func testStability(t *testing.T, algo func(data Interface), name string) {
 		data[i].a = len(data) - i
 	}
 	data.initB()
-	algo(data)
+	Stable(data)
 	if !IsSorted(data) {
-		t.Errorf("%s didn't sort - %d ints", name, n)
+		t.Errorf("Stable didn't sort %d ints", n)
 	}
 	if !data.inOrder() {
-		t.Errorf("sym merge wasn't stable - 1M ints")
+		t.Errorf("Stable wasn't stable on %d ints", n)
 	}
-}
-
-func TestStableStability(t *testing.T) {
-	testStability(t, Stable, "Stable")
 }
 
 /***********************
@@ -615,20 +639,8 @@ func benchmarkString(b *testing.B, algo func(Interface), name string) {
 	}
 }
 
-func BenchmarkStableInt1K(b *testing.B) {
-	benchmarkInt(b, 1<<10, Stable, "Stable")
-}
-
-func BenchmarkStableInt64K(b *testing.B) {
-	benchmarkInt(b, 1<<16, Stable, "Stable")
-}
-
 func BenchmarkStableInt4M(b *testing.B) {
 	benchmarkInt(b, 1<<22, Stable, "Stable")
-}
-
-func BenchmarkStableString1K(b *testing.B) {
-	benchmarkString(b, Stable, "Stable")
 }
 
 func benchmarkSorted(b *testing.B, size int, reversed bool, algo func(Interface), name string) {

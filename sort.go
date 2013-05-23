@@ -287,36 +287,6 @@ func StringsAreSorted(a []string) bool { return IsSorted(StringSlice(a)) }
 // -------------------------------------------------------------------------
 // Stable sorting
 
-// MergeSort sorts data by merging consecutive blocks by calling merge.
-// Cut determines when to switch from recursive merge sort to insertion sort.
-// The maximum recursion depth is returned.
-func MergeSort(data Interface, merge func(data Interface, a, m, b int), cut int, a, b int) {
-	if b-a <= 1 {
-		return
-	}
-
-	if b-a < cut {
-		insertionSort(data, a, b)
-		return
-	}
-	m := a + (b-a)/2
-	MergeSort(data, merge, cut, a, m)
-	MergeSort(data, merge, cut, m, b)
-	merge(data, a, m, b)
-}
-
-// -------------------------------------------------------------------------
-// Block rotation for stable sorting
-
-// Rotate exchanges the two consecutive blocks data[a,m) and data[m,b).
-func rotate(data Interface, a, m, b int) {
-	// RotateSpeed(data, a, m, b)
-	RotateSwap(data, a, m, b)
-	// rotateOptimal(data, a, m, b)
-	// rotateSimple(data, a, m, b)
-	// RotateJuggling(data, a, m, b)
-}
-
 // RotateOptimal exchanges the two consecutive blocks data[a,m) and data[m,b).
 // It performs $O((b-a) \log(\min(m-a,b-b)))$ swap operations ?
 // The implementation is a direct translation of gcc 4.6.3 libstdc++ __rotate()
@@ -381,7 +351,10 @@ func RotateOptimal(data Interface, a, m, b int) {
 	}
 }
 
-func RotateSwap(data Interface, a, m, b int) {
+// Rotate two consecutives blocks u and v in data.
+// If data is xuvy the result is xvuy with u=data[a,m)
+// and v=data[m,b).
+func rotate(data Interface, a, m, b int) {
 	i := m - a
 	if i == 0 {
 		return
@@ -421,12 +394,27 @@ func SwapBlock(data Interface, first, end, second int) {
 	}
 }
 
-// -------------------------------------------------------------------------
-// Sym Merge Sort
-
-// SymMergeSort performs stable in-place sorting of data.
+// Stable sorts data while keeping the original order of equal elements.
+//
+// One call to Len, O(n*log(n) calls to Less and O(n*log(n)*log(n)) ??
+// calls to Swap.
 func Stable(data Interface) {
-	MergeSort(data, symMerge, 7, 0, data.Len())
+	mergeSort(data, 0, data.Len())
+}
+
+func mergeSort(data Interface, a, b int) {
+	if b-a <= 1 {
+		return
+	}
+
+	if b-a < 7 {
+		insertionSort(data, a, b)
+		return
+	}
+	m := a + (b-a)/2
+	mergeSort(data, a, m)
+	mergeSort(data, m, b)
+	symMerge(data, a, m, b)
 }
 
 // SymMerge merges the two sorted subsequences data[first1,first2) and
