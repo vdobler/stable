@@ -440,7 +440,7 @@ func testInts(t *testing.T, algo func(data Interface), name string) {
 	}
 }
 
-func TestSymMergeSortInts(t *testing.T) { testInts(t, SymMergeSort, "SymMergeSort") }
+func TestStableInts(t *testing.T) { testInts(t, Stable, "Stable") }
 
 //
 // Random
@@ -457,13 +457,13 @@ func testRandom(t *testing.T, algo func(data Interface), name string) {
 	if IntsAreSorted(data) {
 		t.Fatalf("terrible rand.rand")
 	}
-	SymMergeSort(IntSlice(data))
+	Stable(IntSlice(data))
 	if !IntsAreSorted(data) {
 		t.Errorf("%s sort didn't sort - 1M ints", name)
 	}
 }
 
-func TestSymMergeSortRandom(t *testing.T) { testRandom(t, SymMergeSort, "SymMergeSort") }
+func TestStableRandom(t *testing.T) { testRandom(t, Stable, "Stable") }
 
 //
 // Stability
@@ -515,10 +515,11 @@ func testStability(t *testing.T, algo func(data Interface), name string) {
 	}
 }
 
-func TestSymMergeSortStability(t *testing.T) {
-	testStability(t, SymMergeSort, "SymMergeSort")
+func TestStableStability(t *testing.T) {
+	testStability(t, Stable, "Stable")
 }
 
+/***********************
 //
 // count swaps, compares and recursion depth
 //
@@ -561,7 +562,10 @@ func countOps(t *testing.T, merge func(Interface, int, int, int, int) int, name 
 	}
 }
 
-// func TestSymMergeOps(t *testing.T) { countOps(t, SymMerge, "SymMergeSort") }
+// func TestSymMergeOps(t *testing.T) { countOps(t, SymMerge, "Stable") }
+
+
+**********************************/
 
 //
 // Benchmarks
@@ -611,20 +615,20 @@ func benchmarkString(b *testing.B, algo func(Interface), name string) {
 	}
 }
 
-func BenchmarkSymMergeSortInt1K(b *testing.B) {
-	benchmarkInt(b, 1<<10, SymMergeSort, "SymMergeSort")
+func BenchmarkStableInt1K(b *testing.B) {
+	benchmarkInt(b, 1<<10, Stable, "Stable")
 }
 
-func BenchmarkSymMergeSortInt64K(b *testing.B) {
-	benchmarkInt(b, 1<<16, SymMergeSort, "SymMergeSort")
+func BenchmarkStableInt64K(b *testing.B) {
+	benchmarkInt(b, 1<<16, Stable, "Stable")
 }
 
-func BenchmarkSymMergeSortInt4M(b *testing.B) {
-	benchmarkInt(b, 1<<22, SymMergeSort, "SymMergeSort")
+func BenchmarkStableInt4M(b *testing.B) {
+	benchmarkInt(b, 1<<22, Stable, "Stable")
 }
 
-func BenchmarkSymMergeSortString1K(b *testing.B) {
-	benchmarkString(b, SymMergeSort, "SymMergeSort")
+func BenchmarkStableString1K(b *testing.B) {
+	benchmarkString(b, Stable, "Stable")
 }
 
 func benchmarkSorted(b *testing.B, size int, reversed bool, algo func(Interface), name string) {
@@ -647,11 +651,11 @@ func benchmarkSorted(b *testing.B, size int, reversed bool, algo func(Interface)
 	}
 }
 
-func BenchmarkSymMergeSortedInt64K(b *testing.B) {
-	benchmarkSorted(b, 1<<16, false, SymMergeSort, "SymMergeSort")
+func BenchmarkStableedInt64K(b *testing.B) {
+	benchmarkSorted(b, 1<<16, false, Stable, "Stable")
 }
 func BenchmarkSymMergeReversedInt64K(b *testing.B) {
-	benchmarkSorted(b, 1<<16, true, SymMergeSort, "SymMergeSort")
+	benchmarkSorted(b, 1<<16, true, Stable, "Stable")
 }
 
 func benchmarkRandom(b *testing.B, subset bool, algo func(data Interface), name string) {
@@ -671,9 +675,9 @@ func benchmarkRandom(b *testing.B, subset bool, algo func(data Interface), name 
 		b.StopTimer()
 	}
 }
-func BenchmarkSymMergeSortUniqe(b *testing.B) {
-	benchmarkRandom(b, false, SymMergeSort, "SymMergeSort")
+func BenchmarkStableUniqe(b *testing.B) {
+	benchmarkRandom(b, false, Stable, "Stable")
 }
-func BenchmarkSymMergeSortSubset(b *testing.B) {
-	benchmarkRandom(b, true, SymMergeSort, "SymMergeSort")
+func BenchmarkStableSubset(b *testing.B) {
+	benchmarkRandom(b, true, Stable, "Stable")
 }

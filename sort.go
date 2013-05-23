@@ -290,29 +290,19 @@ func StringsAreSorted(a []string) bool { return IsSorted(StringSlice(a)) }
 // MergeSort sorts data by merging consecutive blocks by calling merge.
 // Cut determines when to switch from recursive merge sort to insertion sort.
 // The maximum recursion depth is returned.
-func MergeSort(data Interface, merge func(data Interface, a, m, b int, d int) int, cut int, a, b int, depth int) (maxRd int) {
+func MergeSort(data Interface, merge func(data Interface, a, m, b int), cut int, a, b int) {
 	if b-a <= 1 {
-		return depth
+		return
 	}
 
 	if b-a < cut {
 		insertionSort(data, a, b)
-		return depth
-	} else {
-		m := a + (b-a)/2
-		ld := MergeSort(data, merge, cut, a, m, depth+1)
-		rd := MergeSort(data, merge, cut, m, b, depth+1)
-		md := merge(data, a, m, b, depth+1)
-		if ld > rd {
-			maxRd = ld
-		} else {
-			maxRd = rd
-		}
-		if md > maxRd {
-			maxRd = md
-		}
-		return maxRd
+		return
 	}
+	m := a + (b-a)/2
+	MergeSort(data, merge, cut, a, m)
+	MergeSort(data, merge, cut, m, b)
+	merge(data, a, m, b)
 }
 
 // -------------------------------------------------------------------------
@@ -435,8 +425,8 @@ func SwapBlock(data Interface, first, end, second int) {
 // Sym Merge Sort
 
 // SymMergeSort performs stable in-place sorting of data.
-func SymMergeSort(data Interface) {
-	MergeSort(data, SymMerge, 7, 0, data.Len(), 0)
+func Stable(data Interface) {
+	MergeSort(data, symMerge, 7, 0, data.Len())
 }
 
 // SymMerge merges the two sorted subsequences data[first1,first2) and
@@ -446,9 +436,9 @@ func SymMergeSort(data Interface) {
 // It needs $O(m \log(n/m+1))$ comparisons and its recursion depth is
 // bound by $\lceil \log(n+m) \rceil$ where $m \leq n$ are the length
 // of the both sequences to merge.
-func SymMerge(data Interface, first1, first2, last int, depth int) int {
+func symMerge(data Interface, first1, first2, last int) {
 	if first1 >= first2 || first2 >= last {
-		return depth
+		return
 	}
 
 	m := (first1 + last) / 2
@@ -479,10 +469,6 @@ func SymMerge(data Interface, first1, first2, last int, depth int) int {
 	}
 	end := n - start
 	rotate(data, start, first2, end)
-	ld := SymMerge(data, first1, start, m, depth+1)
-	rd := SymMerge(data, m, end, last, depth+1)
-	if ld > rd {
-		return ld
-	}
-	return rd
+	symMerge(data, first1, start, m)
+	symMerge(data, m, end, last)
 }
