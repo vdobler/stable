@@ -1,0 +1,99 @@
+=== RUN TestSearch
+--- PASS: TestSearch (0.00 seconds)
+=== RUN TestSearchEfficiency
+--- PASS: TestSearchEfficiency (0.00 seconds)
+=== RUN TestSearchWrappers
+--- PASS: TestSearchWrappers (0.00 seconds)
+=== RUN TestSearchWrappersDontAlloc
+--- PASS: TestSearchWrappersDontAlloc (0.00 seconds)
+=== RUN TestSearchExhaustive
+--- PASS: TestSearchExhaustive (0.00 seconds)
+=== RUN TestSortIntSlice
+--- PASS: TestSortIntSlice (0.00 seconds)
+=== RUN TestSortFloat64Slice
+--- PASS: TestSortFloat64Slice (0.00 seconds)
+=== RUN TestSortStringSlice
+--- PASS: TestSortStringSlice (0.00 seconds)
+=== RUN TestInts
+--- PASS: TestInts (0.00 seconds)
+=== RUN TestFloat64s
+--- PASS: TestFloat64s (0.00 seconds)
+=== RUN TestStrings
+--- PASS: TestStrings (0.00 seconds)
+=== RUN TestSortLarge_Random
+--- PASS: TestSortLarge_Random (0.66 seconds)
+=== RUN TestReverseSortIntSlice
+--- PASS: TestReverseSortIntSlice (0.00 seconds)
+=== RUN TestSortBM
+--- PASS: TestSortBM (0.58 seconds)
+=== RUN TestHeapsortBM
+--- PASS: TestHeapsortBM (1.15 seconds)
+=== RUN TestAdversary
+--- PASS: TestAdversary (0.00 seconds)
+=== RUN TestStableInts
+--- PASS: TestStableInts (0.00 seconds)
+=== RUN TestStability
+--- PASS: TestStability (0.56 seconds)
+=== RUN TestOpsStable
+--- PASS: TestOpsStable (99.67 seconds)
+	sort_test.go:545: Stable     1000:      13219 swaps,       7305 cmps; s/NlogN=1.91, c/NlogN=1.06
+	sort_test.go:545: Stable    10000:     295274 swaps,     118630 cmps; s/NlogN=3.21, c/NlogN=1.29
+	sort_test.go:545: Stable   100000:    5065823 swaps,    1611622 cmps; s/NlogN=4.40, c/NlogN=1.40
+	sort_test.go:545: Stable  1000000:   76971021 swaps,   20207482 cmps; s/NlogN=5.57, c/NlogN=1.46
+	sort_test.go:545: Stable 10000000: 1092509130 swaps,  246175362 cmps; s/NlogN=6.78, c/NlogN=1.53
+=== RUN TestOpsSort
+--- PASS: TestOpsSort (17.56 seconds)
+	sort_test.go:559: Sort       1000:       1911 swaps,       4773 cmps; s/NlogN=0.28, c/NlogN=0.69
+	sort_test.go:559: Sort      10000:      26924 swaps,      95323 cmps; s/NlogN=0.29, c/NlogN=1.03
+	sort_test.go:559: Sort     100000:     349475 swaps,    1449375 cmps; s/NlogN=0.30, c/NlogN=1.26
+	sort_test.go:559: Sort    1000000:    4303810 swaps,   19666251 cmps; s/NlogN=0.31, c/NlogN=1.42
+	sort_test.go:559: Sort   10000000:   51172263 swaps,  248667964 cmps; s/NlogN=0.32, c/NlogN=1.54
+=== RUN: ExampleInterface
+--- PASS: ExampleInterface (158.227us)
+=== RUN: Example_sortKeys
+--- PASS: Example_sortKeys (234.01us)
+=== RUN: Example_sortMultiKeys
+--- PASS: Example_sortMultiKeys (274.012us)
+=== RUN: ExampleInts
+--- PASS: ExampleInts (28.299us)
+=== RUN: ExampleReverse
+--- PASS: ExampleReverse (25.474us)
+PASS
+BenchmarkSearchWrappers             	 1000000	      1079 ns/op
+BenchmarkSortString1K               	    1000	   1912646 ns/op
+BenchmarkStableString1K             	    2000	    851736 ns/op
+BenchmarkSortInt1K                  	    2000	    874885 ns/op
+BenchmarkStableInt1K                	   10000	    232392 ns/op
+BenchmarkSortInt64K                 	      20	  78308123 ns/op
+BenchmarkStableInt64K               	     100	  16085512 ns/op
+BenchmarkSomeStable1K               	    1000	   1878588 ns/op
+BenchmarkSomeSort1K                 	    5000	    553186 ns/op
+BenchmarkSomeStable10K              	      50	  27447257 ns/op
+BenchmarkSomeSort10K                	     500	   5192613 ns/op
+BenchmarkSomeStable100K             	       5	 323203465 ns/op
+BenchmarkSomeSort100K               	      50	  47992858 ns/op
+BenchmarkSomeStable1M               	       1	3842378629 ns/op
+BenchmarkSomeSort1M                 	       5	 464522100 ns/op
+BenchmarkSomeStable10M              	       1	44701381948 ns/op
+BenchmarkSomeSort10M                	       1	4658441577 ns/op
+BenchmarkConstStable100K            	     500	   6693021 ns/op
+BenchmarkConstSort100K              	     200	   8941225 ns/op
+BenchmarkIncrStable100K             	     200	   6905314 ns/op
+BenchmarkIncrSort100K               	      50	  52300059 ns/op
+BenchmarkDecrStable100K             	      50	  68724150 ns/op
+BenchmarkDecrSort100K               	      50	  53270246 ns/op
+BenchmarkSawtStable100K             	      10	 235635342 ns/op
+BenchmarkSawtSort100K               	      50	  48082050 ns/op
+BenchmarkTwasStable100K             	       5	 266235194 ns/op
+BenchmarkTwasSort100K               	      50	  57583535 ns/op
+BenchmarkRandomStable100            	   10000	    155331 ns/op
+BenchmarkRandomSort100              	   20000	     90448 ns/op
+BenchmarkRandomStable1K             	     500	   4133920 ns/op
+BenchmarkRandomSort1K               	    2000	   1086463 ns/op
+BenchmarkRandomStable10K            	      50	  51577232 ns/op
+BenchmarkRandomSort10K              	     100	  14226538 ns/op
+BenchmarkRandomStable100K           	       5	 466981038 ns/op
+BenchmarkRandomSort100K             	      20	 114473312 ns/op
+BenchmarkRandomStable1M             	       1	6158307167 ns/op
+BenchmarkRandomSort1M               	       1	1375328432 ns/op
+ok  	sort	296.733s

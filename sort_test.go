@@ -398,7 +398,6 @@ func TestAdversary(t *testing.T) {
 	Sort(d) // This should degenerate to heapsort.
 }
 
-// -------------------------------------------------------------------
 // Stable sorting
 
 func TestStableInts(t *testing.T) {
@@ -471,31 +470,6 @@ func (d intPairs) inOrder() bool {
 	return true
 }
 
-func testRandom(t *testing.T, multi bool) {
-	n := 1000000
-	if testing.Short() {
-		n /= 100
-	}
-	m := n / 100
-	if multi {
-		m = n * 10
-	}
-	data := make([]int, n)
-	for i := 0; i < len(data); i++ {
-		data[i] = rand.Intn(m)
-	}
-	if IntsAreSorted(data) {
-		t.Fatalf("terrible rand.rand")
-	}
-	Stable(IntSlice(data))
-	if !IntsAreSorted(data) {
-		t.Errorf("Stable didn't sort %d ints taken from %d", n, m)
-	}
-}
-
-func TestStableUnique(t *testing.T)   { testRandom(t, false) }
-func TestStableMultiple(t *testing.T) { testRandom(t, true) }
-
 func TestStability(t *testing.T) {
 	n, m := 100000, 1000
 	if testing.Short() {
@@ -543,153 +517,128 @@ func TestStability(t *testing.T) {
 	}
 }
 
-/***********************
-//
-// count swaps, compares and recursion depth
-//
-func countOps(t *testing.T, merge func(Interface, int, int, int, int) int, name string) {
-	sizes := []int{1 << 14, 1 << 16, 1 << 18, 1 << 20, 1 << 22}
-	for _, dist := range []string{"RND", "rnd", "inc", "dec", "saw", "was"} {
-		for _, n := range sizes {
-			td := testingData{
-				desc:    name,
-				t:       t,
-				data:    make([]int, n),
-				maxswap: 1 << 32,
-			}
+func countOps(t *testing.T, n int, algo func(Interface), name string) (int, int) {
+	td := testingData{
+		desc:    name,
+		t:       t,
+		data:    make([]int, n),
+		maxswap: 1 << 31,
+	}
 
-			for i := 0; i < n; i++ {
-				switch dist {
-				case "rnd":
-					td.data[i] = rand.Intn(n / 100)
-				case "RND":
-					td.data[i] = rand.Intn(10 * n)
-				case "inc":
-					td.data[i] = i
-				case "dec":
-					td.data[i] = n - i
-				case "saw":
-					td.data[i] = i % 256
-				case "was":
-					td.data[i] = n - i%256
-				default:
-					panic(dist)
-				}
-			}
-			rd := MergeSort(&td, merge, 0, 0, n, 1)
-			s, c := float64(td.nswap), float64(td.ncmp)
-			logN := math.Log(float64(n))
-			N := float64(n)
-			t.Logf("%s %7d %s: %9d swaps, %9d cmps, %2d recd; s/NlogN=%.2f, s/Nlog^2N=%.2f, c/N=%5.2f, c/NlogN=%.2f",
-				name, n, dist, td.nswap, td.ncmp, rd, s/(N*logN), 10*s/(N*logN*logN), c/N, c/(N*logN))
-		}
+	for i := 0; i < n; i++ {
+		td.data[i] = rand.Intn(n / 100)
+	}
+	algo(&td)
+	return td.nswap, td.ncmp
+}
+
+func TestOpsStable(t *testing.T) {
+	sizes := []int{1e3, 1e4, 1e5, 1e6, 1e7}
+	if testing.Short() {
+		sizes = sizes[0 : len(sizes)-1]
+	}
+	for _, n := range sizes {
+		s, c := countOps(t, n, Stable, "Stable")
+		N, S, C := float64(n), float64(s), float64(c)
+		logN := math.Log(N)
+		t.Logf("Stable %8d: %10d swaps, %10d cmps; s/NlogN=%.2f, c/NlogN=%.2f",
+			n, s, c, S/(N*logN), C/(N*logN))
 	}
 }
 
-// func TestSymMergeOps(t *testing.T) { countOps(t, SymMerge, "Stable") }
+func TestOpsSort(t *testing.T) {
+	sizes := []int{1e3, 1e4, 1e5, 1e6, 1e7}
+	if testing.Short() {
+		sizes = sizes[0 : len(sizes)-1]
+	}
+	for _, n := range sizes {
+		s, c := countOps(t, n, Sort, "Sort")
+		N, S, C := float64(n), float64(s), float64(c)
+		logN := math.Log(N)
+		t.Logf("Sort   %8d: %10d swaps, %10d cmps; s/NlogN=%.2f, c/NlogN=%.2f",
+			n, s, c, S/(N*logN), C/(N*logN))
+	}
+}
 
+// Benchmarks comparing Stable to Sort.
 
-**********************************/
-
-//
-// Benchmarks
-//
-
-func benchmarkInt(b *testing.B, size int, algo func(Interface), name string) {
-	b.StopTimer()
-	var xor int
-	switch size {
-	case 1 << 10:
-		xor = 0x2cc
-	case 1 << 16:
-		xor = 0xcccc
-	case 1 << 22:
-		xor = 0x2ccccc
+func generate(i int, dist string) int {
+	switch dist {
+	case "const":
+		return 9
+	case "incr":
+		return i
+	case "decr":
+		return -i
+	case "rand":
+		return rand.Int()
+	case "some":
+		return rand.Intn(100)
+	case "sawt":
+		return i % 250
+	case "twas":
+		return 250 - (i % 250)
 	default:
-		panic(size)
+		panic(dist)
 	}
-	data := make([]int, size)
+}
+
+func bench(b *testing.B, size int, algo func(Interface), name, dist string) {
+	b.StopTimer()
+	data := make(intPairs, size)
 	for i := 0; i < b.N; i++ {
 		for i := 0; i < len(data); i++ {
-			data[i] = i ^ xor
+			data[i].a = generate(i, dist)
 		}
+		data.initB()
 		b.StartTimer()
-		algo(IntSlice(data))
+		algo(data)
 		b.StopTimer()
-		if !IsSorted(IntSlice(data)) {
-			b.Errorf("%s did not sort %d ints", name, size)
+		if !IsSorted(data) {
+			b.Errorf("%s did not sort %d %s distributed ints", name, size, dist)
 		}
-	}
-
-}
-
-func benchmarkString(b *testing.B, algo func(Interface), name string) {
-	b.StopTimer()
-	data := make([]string, 1<<10)
-	for i := 0; i < b.N; i++ {
-		for i := 0; i < len(data); i++ {
-			data[i] = strconv.Itoa(i ^ 0x2cc)
-		}
-		b.StartTimer()
-		algo(StringSlice(data))
-		b.StopTimer()
-		if !IsSorted(StringSlice(data)) {
-			b.Errorf("%s did not sort strings", name)
+		if name == "Stable" && !data.inOrder() {
+			b.Errorf("%s unstable on %d %s distributed ints", name, size, dist)
 		}
 	}
 }
 
-func BenchmarkStableInt4M(b *testing.B) {
-	benchmarkInt(b, 1<<22, Stable, "Stable")
-}
+// Stable sorting of unique data is pretty much pointless: If no equal
+// elements are present in the sequence, then there is no need to keep
+// their initial order.  Thus the big comparison between Stable and Sort
+// is done on a random distribution of "some" (a hundred different)
+// values.
+func BenchmarkSomeStable1K(b *testing.B)   { bench(b, 1e3, Stable, "Stable", "some") }
+func BenchmarkSomeSort1K(b *testing.B)     { bench(b, 1e3, Sort, "Sort", "some") }
+func BenchmarkSomeStable10K(b *testing.B)  { bench(b, 1e4, Stable, "Stable", "some") }
+func BenchmarkSomeSort10K(b *testing.B)    { bench(b, 1e4, Sort, "Sort", "some") }
+func BenchmarkSomeStable100K(b *testing.B) { bench(b, 1e5, Stable, "Stable", "some") }
+func BenchmarkSomeSort100K(b *testing.B)   { bench(b, 1e5, Sort, "Sort", "some") }
+func BenchmarkSomeStable1M(b *testing.B)   { bench(b, 1e6, Stable, "Stable", "some") }
+func BenchmarkSomeSort1M(b *testing.B)     { bench(b, 1e6, Sort, "Sort", "some") }
+func BenchmarkSomeStable10M(b *testing.B)  { bench(b, 1e7, Stable, "Stable", "some") }
+func BenchmarkSomeSort10M(b *testing.B)    { bench(b, 1e7, Sort, "Sort", "some") }
 
-func benchmarkSorted(b *testing.B, size int, reversed bool, algo func(Interface), name string) {
-	b.StopTimer()
-	data := make([]int, size)
-	for i := 0; i < b.N; i++ {
-		for i := 0; i < len(data); i++ {
-			if reversed {
-				data[i] = size - i
-			} else {
-				data[i] = i
-			}
-		}
-		b.StartTimer()
-		algo(IntSlice(data))
-		b.StopTimer()
-		if !IsSorted(IntSlice(data)) {
-			b.Errorf("%s bad sorting", name, size)
-		}
-	}
-}
+// Some pathological cases
+func BenchmarkConstStable100K(b *testing.B) { bench(b, 1e5, Stable, "Stable", "const") }
+func BenchmarkConstSort100K(b *testing.B)   { bench(b, 1e5, Sort, "Sort", "const") }
+func BenchmarkIncrStable100K(b *testing.B)  { bench(b, 1e5, Stable, "Stable", "incr") }
+func BenchmarkIncrSort100K(b *testing.B)    { bench(b, 1e5, Sort, "Sort", "incr") }
+func BenchmarkDecrStable100K(b *testing.B)  { bench(b, 1e5, Stable, "Stable", "decr") }
+func BenchmarkDecrSort100K(b *testing.B)    { bench(b, 1e5, Sort, "Sort", "decr") }
+func BenchmarkSawtStable100K(b *testing.B)  { bench(b, 1e5, Stable, "Stable", "sawt") }
+func BenchmarkSawtSort100K(b *testing.B)    { bench(b, 1e5, Sort, "Sort", "sawt") }
+func BenchmarkTwasStable100K(b *testing.B)  { bench(b, 1e5, Stable, "Stable", "twas") }
+func BenchmarkTwasSort100K(b *testing.B)    { bench(b, 1e5, Sort, "Sort", "twas") }
 
-func BenchmarkStableedInt64K(b *testing.B) {
-	benchmarkSorted(b, 1<<16, false, Stable, "Stable")
-}
-func BenchmarkSymMergeReversedInt64K(b *testing.B) {
-	benchmarkSorted(b, 1<<16, true, Stable, "Stable")
-}
-
-func benchmarkRandom(b *testing.B, subset bool, algo func(data Interface), name string) {
-	b.StopTimer()
-	n := 1000000
-	m := 10 * n
-	if subset {
-		m = n / 1000
-	}
-	data := make([]int, n)
-	for j := 0; j < b.N; j++ {
-		for i := 0; i < len(data); i++ {
-			data[i] = rand.Intn(m)
-		}
-		b.StartTimer()
-		algo(IntSlice(data))
-		b.StopTimer()
-	}
-}
-func BenchmarkStableUniqe(b *testing.B) {
-	benchmarkRandom(b, false, Stable, "Stable")
-}
-func BenchmarkStableSubset(b *testing.B) {
-	benchmarkRandom(b, true, Stable, "Stable")
-}
+// Full random data with only a few equal elements.
+func BenchmarkRandomStable100(b *testing.B)  { bench(b, 1e2, Stable, "Stable", "rand") }
+func BenchmarkRandomSort100(b *testing.B)    { bench(b, 1e2, Sort, "Sort", "rand") }
+func BenchmarkRandomStable1K(b *testing.B)   { bench(b, 1e3, Stable, "Stable", "rand") }
+func BenchmarkRandomSort1K(b *testing.B)     { bench(b, 1e3, Sort, "Sort", "rand") }
+func BenchmarkRandomStable10K(b *testing.B)  { bench(b, 1e4, Stable, "Stable", "rand") }
+func BenchmarkRandomSort10K(b *testing.B)    { bench(b, 1e4, Sort, "Sort", "rand") }
+func BenchmarkRandomStable100K(b *testing.B) { bench(b, 1e5, Stable, "Stable", "rand") }
+func BenchmarkRandomSort100K(b *testing.B)   { bench(b, 1e5, Sort, "Sort", "rand") }
+func BenchmarkRandomStable1M(b *testing.B)   { bench(b, 1e6, Stable, "Stable", "rand") }
+func BenchmarkRandomSort1M(b *testing.B)     { bench(b, 1e6, Sort, "Sort", "rand") }
