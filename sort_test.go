@@ -362,22 +362,6 @@ func TestAdversary(t *testing.T) {
 // -------------------------------------------------------------------
 // Stable sorting
 
-func TestGcd(t *testing.T) {
-	for i, tc := range []struct{ m, n, g int }{
-		{15, 12, 3},
-		{15, 16, 1},
-		{12, 16, 4},
-		{8, 16, 8},
-		{16, 8, 8},
-		{7, 13, 1},
-		{7, 4, 1},
-	} {
-		if got := Gcd(tc.m, tc.n); got != tc.g {
-			t.Errorf("%d: gcd(%d,%d)=%d, got %d", i, tc.m, tc.n, tc.g, got)
-		}
-	}
-}
-
 func testRotation(t *testing.T, algo func(data Interface, a, m, b int), name string) {
 	data := []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 
@@ -409,18 +393,9 @@ func testRotation(t *testing.T, algo func(data Interface, a, m, b int), name str
 	t.Logf("%s: ok", name)
 }
 
-func TestJuggling(t *testing.T) {
-	data := []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
-	RotateJuggling(IntSlice(data), 0, 2, 5)
-	fmt.Printf("data = %v\n", data)
-}
-
 func TestRotation(t *testing.T) {
-	testRotation(t, RotateSimple, "rotateSimple")
 	testRotation(t, RotateOptimal, "rotateOptimal")
 	testRotation(t, RotateSwap, "rotateSwap")
-	testRotation(t, RotateSpeed, "rotateSpeed")
-	testRotation(t, RotateJuggling, "rotateJuggling")
 }
 
 type intPairs []struct {
@@ -465,9 +440,7 @@ func testInts(t *testing.T, algo func(data Interface), name string) {
 	}
 }
 
-func TestSymMergeSortInts(t *testing.T)      { testInts(t, SymMergeSort, "SymMergeSort") }
-func TestSplitMergeSortInts(t *testing.T)    { testInts(t, SplitMergeSort, "SplitMergeSort") }
-func TestInplaceStableSortInts(t *testing.T) { testInts(t, InplaceStableSort, "InplaceStableSort") }
+func TestSymMergeSortInts(t *testing.T) { testInts(t, SymMergeSort, "SymMergeSort") }
 
 //
 // Random
@@ -490,17 +463,15 @@ func testRandom(t *testing.T, algo func(data Interface), name string) {
 	}
 }
 
-func TestSymMergeSortRandom(t *testing.T)      { testRandom(t, SymMergeSort, "SymMergeSort") }
-func TestSplitMergeSortRandom(t *testing.T)    { testRandom(t, SplitMergeSort, "SplitMergeSort") }
-func TestInplaceStableSortRandom(t *testing.T) { testRandom(t, InplaceStableSort, "InplaceStableSort") }
+func TestSymMergeSortRandom(t *testing.T) { testRandom(t, SymMergeSort, "SymMergeSort") }
 
 //
 // Stability
 //
 func testStability(t *testing.T, algo func(data Interface), name string) {
-	n, m := 1000000, 1000
+	n, m := 100000, 1000
 	if testing.Short() {
-		n, m = 10000, 100
+		n, m = 1000, 100
 	}
 	data := make(intPairs, n)
 
@@ -547,18 +518,12 @@ func testStability(t *testing.T, algo func(data Interface), name string) {
 func TestSymMergeSortStability(t *testing.T) {
 	testStability(t, SymMergeSort, "SymMergeSort")
 }
-func TestSplitMergeSortStability(t *testing.T) {
-	testStability(t, SplitMergeSort, "SplitMergeSort")
-}
-func TestInplaceStableSortStability(t *testing.T) {
-	testStability(t, InplaceStableSort, "InplaceStableSort")
-}
 
 //
 // count swaps, compares and recursion depth
 //
 func countOps(t *testing.T, merge func(Interface, int, int, int, int) int, name string) {
-	sizes := []int{1 << 14, 1 << 16, 1 << 18, 1 << 20, 1<<22}
+	sizes := []int{1 << 14, 1 << 16, 1 << 18, 1 << 20, 1 << 22}
 	for _, dist := range []string{"RND", "rnd", "inc", "dec", "saw", "was"} {
 		for _, n := range sizes {
 			td := testingData{
@@ -571,7 +536,7 @@ func countOps(t *testing.T, merge func(Interface, int, int, int, int) int, name 
 			for i := 0; i < n; i++ {
 				switch dist {
 				case "rnd":
-					td.data[i] = rand.Intn(n/100)
+					td.data[i] = rand.Intn(n / 100)
 				case "RND":
 					td.data[i] = rand.Intn(10 * n)
 				case "inc":
@@ -596,9 +561,7 @@ func countOps(t *testing.T, merge func(Interface, int, int, int, int) int, name 
 	}
 }
 
-func TestSplitMergeOps(t *testing.T)    { countOps(t, SplitMerge, "SplitMergeSort") }
-func TestSymMergeOps(t *testing.T) { countOps(t, SymMerge, "SymMergeSort") }
-func TestInplaceStableOps(t *testing.T) { countOps(t, MergeWithoutBuffer, "InplaceStableSort") }
+// func TestSymMergeOps(t *testing.T) { countOps(t, SymMerge, "SymMergeSort") }
 
 //
 // Benchmarks
@@ -651,51 +614,17 @@ func benchmarkString(b *testing.B, algo func(Interface), name string) {
 func BenchmarkSymMergeSortInt1K(b *testing.B) {
 	benchmarkInt(b, 1<<10, SymMergeSort, "SymMergeSort")
 }
-func BenchmarkSplitMergeSortInt1K(b *testing.B) {
-	benchmarkInt(b, 1<<10, SplitMergeSort, "SplitMergeSort")
-}
-func BenchmarkInplaceStableSortInt1K(b *testing.B) {
-	benchmarkInt(b, 1<<10, InplaceStableSort, "InplaceStableSort")
-}
-func BenchmarkStandardSortInt1K(b *testing.B) {
-	benchmarkInt(b, 1<<10, Sort, "Sort")
-}
 
 func BenchmarkSymMergeSortInt64K(b *testing.B) {
 	benchmarkInt(b, 1<<16, SymMergeSort, "SymMergeSort")
-}
-func BenchmarkSplitMergeSortInt64K(b *testing.B) {
-	benchmarkInt(b, 1<<16, SplitMergeSort, "SplitMergeSort")
-}
-func BenchmarkInplaceStableSortInt64K(b *testing.B) {
-	benchmarkInt(b, 1<<16, InplaceStableSort, "InplaceStableSort")
-}
-func BenchmarkStandardSortInt64K(b *testing.B) {
-	benchmarkInt(b, 1<<16, Sort, "Sort")
 }
 
 func BenchmarkSymMergeSortInt4M(b *testing.B) {
 	benchmarkInt(b, 1<<22, SymMergeSort, "SymMergeSort")
 }
-func BenchmarkSplitMergeSortInt4M(b *testing.B) {
-	benchmarkInt(b, 1<<22, SplitMergeSort, "SplitMergeSort")
-}
-func BenchmarkInplaceStableSortInt4M(b *testing.B) {
-	benchmarkInt(b, 1<<22, InplaceStableSort, "InplaceStableSort")
-}
-func BenchmarkStandardSortInt4M(b *testing.B) { benchmarkInt(b, 1<<22, Sort, "Sort") }
 
 func BenchmarkSymMergeSortString1K(b *testing.B) {
 	benchmarkString(b, SymMergeSort, "SymMergeSort")
-}
-func BenchmarkSplitMergeSortString1K(b *testing.B) {
-	benchmarkString(b, SplitMergeSort, "SplitMergeSort")
-}
-func BenchmarkInplaceStableSortString1K(b *testing.B) {
-	benchmarkString(b, InplaceStableSort, "InplaceStableSort")
-}
-func BenchmarkStandardSortString1K(b *testing.B) {
-	benchmarkString(b, Sort, "Sort")
 }
 
 func benchmarkSorted(b *testing.B, size int, reversed bool, algo func(Interface), name string) {
@@ -721,26 +650,8 @@ func benchmarkSorted(b *testing.B, size int, reversed bool, algo func(Interface)
 func BenchmarkSymMergeSortedInt64K(b *testing.B) {
 	benchmarkSorted(b, 1<<16, false, SymMergeSort, "SymMergeSort")
 }
-func BenchmarkSplitMergeSortedInt64K(b *testing.B) {
-	benchmarkSorted(b, 1<<16, false, SplitMergeSort, "SplitMergeSort")
-}
-func BenchmarkInplaceStableSortedInt64K(b *testing.B) {
-	benchmarkSorted(b, 1<<16, false, InplaceStableSort, "InplaceStableSort")
-}
-func BenchmarkStandardSortedInt64K(b *testing.B) {
-	benchmarkSorted(b, 1<<16, false, Sort, "Sort")
-}
 func BenchmarkSymMergeReversedInt64K(b *testing.B) {
 	benchmarkSorted(b, 1<<16, true, SymMergeSort, "SymMergeSort")
-}
-func BenchmarkSplitMergeReversedInt64K(b *testing.B) {
-	benchmarkSorted(b, 1<<16, true, SplitMergeSort, "SplitMergeSort")
-}
-func BenchmarkInplaceStableReversedInt64K(b *testing.B) {
-	benchmarkSorted(b, 1<<16, true, InplaceStableSort, "InplaceStableSort")
-}
-func BenchmarkStandardSortReversedInt64K(b *testing.B) {
-	benchmarkSorted(b, 1<<16, true, Sort, "Sort")
 }
 
 func benchmarkRandom(b *testing.B, subset bool, algo func(data Interface), name string) {
@@ -763,24 +674,6 @@ func benchmarkRandom(b *testing.B, subset bool, algo func(data Interface), name 
 func BenchmarkSymMergeSortUniqe(b *testing.B) {
 	benchmarkRandom(b, false, SymMergeSort, "SymMergeSort")
 }
-func BenchmarkSplitMergeSortUniqe(b *testing.B) {
-	benchmarkRandom(b, false, SplitMergeSort, "SplitMergeSort")
-}
-func BenchmarkInplaceStableSortUniqe(b *testing.B) {
-	benchmarkRandom(b, false, InplaceStableSort, "InplaceStableSort")
-}
-func BenchmarkStandardSortUniqe(b *testing.B) {
-	benchmarkRandom(b, false, Sort, "Sort")
-}
 func BenchmarkSymMergeSortSubset(b *testing.B) {
 	benchmarkRandom(b, true, SymMergeSort, "SymMergeSort")
-}
-func BenchmarkSplitMergeSortSubset(b *testing.B) {
-	benchmarkRandom(b, true, SplitMergeSort, "SplitMergeSort")
-}
-func BenchmarkInplaceStableSortSubset(b *testing.B) {
-	benchmarkRandom(b, true, InplaceStableSort, "InplaceStableSort")
-}
-func BenchmarkStandardSortSubset(b *testing.B) {
-	benchmarkRandom(b, true, Sort, "Sort")
 }
