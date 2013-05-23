@@ -558,8 +558,8 @@ func TestInplaceStableSortStability(t *testing.T) {
 // count swaps, compares and recursion depth
 //
 func countOps(t *testing.T, merge func(Interface, int, int, int, int) int, name string) {
-	sizes := []int{1 << 14, 1 << 16, 1 << 18, 1 << 20}
-	for _, dist := range []string{"RND" /* "rnd", "inc", "dec", "saw", "was" */} {
+	sizes := []int{1 << 14, 1 << 16, 1 << 18, 1 << 20, 1<<22}
+	for _, dist := range []string{"RND", "rnd", "inc", "dec", "saw", "was"} {
 		for _, n := range sizes {
 			td := testingData{
 				desc:    name,
@@ -571,9 +571,9 @@ func countOps(t *testing.T, merge func(Interface, int, int, int, int) int, name 
 			for i := 0; i < n; i++ {
 				switch dist {
 				case "rnd":
-					td.data[i] = rand.Intn(100)
+					td.data[i] = rand.Intn(n/100)
 				case "RND":
-					td.data[i] = rand.Intn(2 * n)
+					td.data[i] = rand.Intn(10 * n)
 				case "inc":
 					td.data[i] = i
 				case "dec":
@@ -590,16 +590,15 @@ func countOps(t *testing.T, merge func(Interface, int, int, int, int) int, name 
 			s, c := float64(td.nswap), float64(td.ncmp)
 			logN := math.Log(float64(n))
 			N := float64(n)
-			t.Logf("%s %7d %s: %8d swaps, %8d cmps, %2d recd; s/NlogN=%.2f, c/N=%5.2f, c/NlogN=%.2f",
-				name, n, dist, td.nswap, td.ncmp, rd, s/(N*logN), c/N, c/(N*logN))
+			t.Logf("%s %7d %s: %9d swaps, %9d cmps, %2d recd; s/NlogN=%.2f, s/Nlog^2N=%.2f, c/N=%5.2f, c/NlogN=%.2f",
+				name, n, dist, td.nswap, td.ncmp, rd, s/(N*logN), 10*s/(N*logN*logN), c/N, c/(N*logN))
 		}
 	}
 }
 
-// func TestSplitMergeOps(t *testing.T)    { countOps(t, SplitMerge, "SplitMergeSort") }
+func TestSplitMergeOps(t *testing.T)    { countOps(t, SplitMerge, "SplitMergeSort") }
 func TestSymMergeOps(t *testing.T) { countOps(t, SymMerge, "SymMergeSort") }
-
-// func TestInplaceStableOps(t *testing.T) { countOps(t, MergeWithoutBuffer, "InplaceStableSort") }
+func TestInplaceStableOps(t *testing.T) { countOps(t, MergeWithoutBuffer, "InplaceStableSort") }
 
 //
 // Benchmarks
