@@ -284,76 +284,8 @@ func Float64sAreSorted(a []float64) bool { return IsSorted(Float64Slice(a)) }
 // StringsAreSorted tests whether a slice of strings is sorted in increasing order.
 func StringsAreSorted(a []string) bool { return IsSorted(StringSlice(a)) }
 
-// -------------------------------------------------------------------------
-// Stable sorting
-
-// RotateOptimal exchanges the two consecutive blocks data[a,m) and data[m,b).
-// It performs $O((b-a) \log(\min(m-a,b-b)))$ swap operations ?
-// The implementation is a direct translation of gcc 4.6.3 libstdc++ __rotate()
-// function for bidirectional iterators in stl_algo.h
-// (See http://gcc.gnu.org/onlinedocs/gcc-4.6.3/libstdc++/api/a01045_source.html)
-func RotateOptimal(data Interface, a, m, b int) {
-	if a == m || m == b {
-		return
-	}
-	n := b - a
-	k := m - a
-	p := a
-
-	if k == n-k {
-		// Both blocks are of length k (=n/2) and rotating is easy.
-		for i := 0; i < k; i++ {
-			data.Swap(a+i, m+i)
-		}
-		return
-	}
-
-	for {
-		if k < n-k {
-			if k == 1 {
-				for i := p; i < p+n-1; i++ {
-					data.Swap(i, i+1)
-				}
-				return
-			}
-			q := p + k
-			for i := 0; i < n-k; i++ {
-				data.Swap(p, q)
-				p++
-				q++
-			}
-			n %= k
-			if n == 0 {
-				return
-			}
-			n, k = k, n
-			k = n - k
-		} else {
-			k = n - k
-			if k == 1 {
-				for i := p + n; i < p; i-- {
-					data.Swap(i-1, i)
-				}
-			}
-			q := p + n
-			p = q - k
-			for i := 0; i < n-k; i++ {
-				p--
-				q--
-				data.Swap(p, q)
-			}
-			n %= k
-			if n == 0 {
-				return
-			}
-			n, k = k, n
-		}
-	}
-}
-
-// Rotate two consecutives blocks u and v in data.
-// If data is xuvy the result is xvuy with u=data[a,m)
-// and v=data[m,b).
+// Rotate two consecutives blocks u = data[a,m) and v = data[m,b) in data:
+// Data of the form 'xuvy' is changed to 'xvuy'.
 func rotate(data Interface, a, m, b int) {
 	i := m - a
 	if i == 0 {
@@ -365,39 +297,29 @@ func rotate(data Interface, a, m, b int) {
 	}
 
 	if i == j {
-		for m < b {
-			data.Swap(a, m)
-			a++
-			m++
-		}
+		swapRange(data, a, m, i)
 		return
 	}
 
 	p := a + i
 	for i != j {
 		if i > j {
-			SwapBlock(data, p-i, p-i+j, p)
+			swapRange(data, p-i, p, j)
 			i -= j
 		} else {
-			SwapBlock(data, p-i, p, p+j-i)
+			swapRange(data, p-i, p+j-i, i)
 			j -= i
 		}
 	}
-	SwapBlock(data, p-i, p, p)
-}
-
-// Swap two same length blocks uv to vu.
-func SwapBlock(data Interface, first, end, second int) {
-	n := end - first
-	for i := 0; i < n; i++ {
-		data.Swap(first+i, second+i)
-	}
+	swapRange(data, p-i, p, i)
 }
 
 // Stable sorts data while keeping the original order of equal elements.
 //
-// One call to Len, O(n*log(n) calls to Less and O(n*log(n)*log(n)) ??
-// calls to Swap.
+// It makes one call to data.Len to determine n, O(n*log(n)) calls to
+// data.Less and O(n**1.15) calls to data.Swap.
+//
+// Swaps:  9.37 * n**1.153
 func Stable(data Interface) {
 	mergeSort(data, 0, data.Len())
 }
@@ -421,9 +343,9 @@ func mergeSort(data Interface, a, b int) {
 // data[first2,last) using the SymMerge algorithm from: Pok-Son Kim and
 // Arne Kutzner, "Stable Minimum Storage Merging by Symmetric Comparisons"
 // (2004?)
-// It needs $O(m \log(n/m+1))$ comparisons and its recursion depth is
-// bound by $\lceil \log(n+m) \rceil$ where $m \leq n$ are the length
-// of the both sequences to merge.
+// It needs O(m*log(n/m+1)) comparisons and its recursion depth is bound
+// by ceil(log(n+m)) where m <= n are the length of the both sequences to
+// merge.
 func symMerge(data Interface, first1, first2, last int) {
 	if first1 >= first2 || first2 >= last {
 		return

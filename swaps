@@ -1,0 +1,17 @@
+# Stable         30 :           90 swaps,         119 cmps; s/NlogN=0.88, s/N**1.15=0.18, c/NlogN=1.17
+# Stable        100 :          608 swaps,         585 cmps; s/NlogN=1.32, s/N**1.15=0.30, c/NlogN=1.27
+Stable        300 :         1913 swaps,        1395 cmps; s/NlogN=1.12, s/N**1.15=0.27, c/NlogN=0.82
+Stable       1000 :        13246 swaps,        7383 cmps; s/NlogN=1.92, s/N**1.15=0.47, c/NlogN=1.07
+Stable       3000 :        60675 swaps,       28752 cmps; s/NlogN=2.53, s/N**1.15=0.61, c/NlogN=1.20
+Stable      10000 :       295882 swaps,      118237 cmps; s/NlogN=3.21, s/N**1.15=0.74, c/NlogN=1.28
+Stable      30000 :      1162351 swaps,      412201 cmps; s/NlogN=3.76, s/N**1.15=0.83, c/NlogN=1.33
+Stable     100000 :      5068470 swaps,     1613399 cmps; s/NlogN=4.40, s/N**1.15=0.90, c/NlogN=1.40
+Stable     300000 :     18780599 swaps,     5427449 cmps; s/NlogN=4.96, s/N**1.15=0.94, c/NlogN=1.43
+Stable    1000000 :     76972292 swaps,    20205139 cmps; s/NlogN=5.57, s/N**1.15=0.97, c/NlogN=1.46
+Stable    3000000 :    275651665 swaps,    67258374 cmps; s/NlogN=6.16, s/N**1.15=0.98, c/NlogN=1.50
+Stable   10000000 :   1092556985 swaps,   246177542 cmps; s/NlogN=6.78, s/N**1.15=0.97, c/NlogN=1.53
+Stable   30000000 :   3788948053 swaps,   795734011 cmps; s/NlogN=7.34, s/N**1.15=0.95, c/NlogN=1.54
+Stable   70000000 :   9825064283 swaps,  1960893452 cmps; s/NlogN=7.77, s/N**1.15=0.93, c/NlogN=1.55
+Stable  100000000 :  14676631761 swaps,  2889914546 cmps; s/NlogN=7.97, s/N**1.15=0.93, c/NlogN=1.57
+Stable  200000000 :  31831937971 swaps,  6035964314 cmps; s/NlogN=8.33, s/N**1.15=0.91, c/NlogN=1.58
+Stable  400000000 :  68815286649 swaps, 12584018540 cmps; s/NlogN=8.69, s/N**1.15=0.88, c/NlogN=1.59

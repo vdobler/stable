@@ -522,7 +522,7 @@ func countOps(t *testing.T, n int, algo func(Interface), name string) (int, int)
 		desc:    name,
 		t:       t,
 		data:    make([]int, n),
-		maxswap: 1 << 31,
+		maxswap: 1 << 44,
 	}
 
 	for i := 0; i < n; i++ {
@@ -532,31 +532,31 @@ func countOps(t *testing.T, n int, algo func(Interface), name string) (int, int)
 	return td.nswap, td.ncmp
 }
 
-func TestOpsStable(t *testing.T) {
-	sizes := []int{1e3, 1e4, 1e5, 1e6, 1e7}
+func TestCountStableOps(t *testing.T) {
+	sizes := []int{1e3, 3e3, 1e4, 3e4, 1e5, 3e5, 1e6, 3e6, 1e7, 3e7, 1e8}
 	if testing.Short() {
-		sizes = sizes[0 : len(sizes)-1]
+		sizes = sizes[:5]
+	}
+	if !testing.Verbose() {
+		t.Skip("counting skipped as nonverbose")
 	}
 	for _, n := range sizes {
 		s, c := countOps(t, n, Stable, "Stable")
-		N, S, C := float64(n), float64(s), float64(c)
-		logN := math.Log(N)
-		t.Logf("Stable %8d: %10d swaps, %10d cmps; s/NlogN=%.2f, c/NlogN=%.2f",
-			n, s, c, S/(N*logN), C/(N*logN))
+		t.Logf("Stable: %8d elements, %11d Swap, %10d Less", n, s, c)
 	}
 }
 
-func TestOpsSort(t *testing.T) {
-	sizes := []int{1e3, 1e4, 1e5, 1e6, 1e7}
+func TestCountSortOps(t *testing.T) {
+	sizes := []int{1e3, 3e3, 1e4, 3e4, 1e5, 3e5, 1e6, 3e6, 1e7, 3e7, 1e8}
 	if testing.Short() {
-		sizes = sizes[0 : len(sizes)-1]
+		sizes = sizes[:5]
+	}
+	if !testing.Verbose() {
+		t.Skip("counting skipped as nonverbose")
 	}
 	for _, n := range sizes {
-		s, c := countOps(t, n, Sort, "Sort")
-		N, S, C := float64(n), float64(s), float64(c)
-		logN := math.Log(N)
-		t.Logf("Sort   %8d: %10d swaps, %10d cmps; s/NlogN=%.2f, c/NlogN=%.2f",
-			n, s, c, S/(N*logN), C/(N*logN))
+		s, c := countOps(t, n, Sort, "Stable")
+		t.Logf("Sort:   %8d elements, %11d Swap, %10d Less", n, s, c)
 	}
 }
 
