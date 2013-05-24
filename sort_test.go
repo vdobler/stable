@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
-	"reflect"
 	. "sort"
 	"strconv"
 	"testing"
@@ -408,37 +407,6 @@ func TestStableInts(t *testing.T) {
 	}
 }
 
-func testRotation(t *testing.T, algo func(data Interface, a, m, b int), name string) {
-	data := []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
-
-	algo(IntSlice(data), 0, 5, 10) // |u| = |v|
-	if !reflect.DeepEqual(data, []int{5, 6, 7, 8, 9, 0, 1, 2, 3, 4}) {
-		t.Fatalf("%s\nwant %v\n got %v", name, []int{5, 6, 7, 8, 9, 0, 1, 2, 3, 4}, data)
-	}
-
-	algo(IntSlice(data), 2, 6, 9) // |u| > |v|
-	if !reflect.DeepEqual(data, []int{5, 6, 1, 2, 3, 7, 8, 9, 0, 4}) {
-		t.Fatalf("%s\nwant %v\n got %v", name, []int{5, 6, 1, 2, 3, 7, 8, 9, 0, 4}, data)
-	}
-
-	algo(IntSlice(data), 1, 3, 8) // |u| < |v|
-	if !reflect.DeepEqual(data, []int{5, 2, 3, 7, 8, 9, 6, 1, 0, 4}) {
-		t.Fatalf("%s\nwant %v\n got %v", name, []int{5, 2, 3, 7, 8, 9, 6, 1, 0, 4}, data)
-	}
-
-	algo(IntSlice(data), 4, 5, 7) // |u| == 1
-	if !reflect.DeepEqual(data, []int{5, 2, 3, 7, 9, 6, 8, 1, 0, 4}) {
-		t.Fatalf("%s\nwant %v\n got %v", name, []int{5, 2, 3, 7, 9, 6, 8, 1, 0, 4}, data)
-	}
-
-	algo(IntSlice(data), 2, 5, 6) // |v| == 1
-	if !reflect.DeepEqual(data, []int{5, 2, 6, 3, 7, 9, 8, 1, 0, 4}) {
-		t.Fatalf("%s\nwant %v\n got %v", name, []int{5, 2, 6, 3, 7, 9, 8, 1, 0, 4}, data)
-	}
-
-	t.Logf("%s: ok", name)
-}
-
 type intPairs []struct {
 	a, b int
 }
@@ -522,7 +490,7 @@ func countOps(t *testing.T, n int, algo func(Interface), name string) (int, int)
 		desc:    name,
 		t:       t,
 		data:    make([]int, n),
-		maxswap: 1 << 44,
+		maxswap: 1 << 31,
 	}
 
 	for i := 0; i < n; i++ {
@@ -535,7 +503,7 @@ func countOps(t *testing.T, n int, algo func(Interface), name string) (int, int)
 func TestCountStableOps(t *testing.T) {
 	sizes := []int{1e3, 3e3, 1e4, 3e4, 1e5, 3e5, 1e6, 3e6, 1e7, 3e7, 1e8}
 	if testing.Short() {
-		sizes = sizes[:5]
+		sizes = sizes[:7]
 	}
 	if !testing.Verbose() {
 		t.Skip("counting skipped as nonverbose")
@@ -549,7 +517,7 @@ func TestCountStableOps(t *testing.T) {
 func TestCountSortOps(t *testing.T) {
 	sizes := []int{1e3, 3e3, 1e4, 3e4, 1e5, 3e5, 1e6, 3e6, 1e7, 3e7, 1e8}
 	if testing.Short() {
-		sizes = sizes[:5]
+		sizes = sizes[:7]
 	}
 	if !testing.Verbose() {
 		t.Skip("counting skipped as nonverbose")
