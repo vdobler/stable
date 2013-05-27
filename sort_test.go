@@ -490,18 +490,19 @@ func countOps(t *testing.T, n int, algo func(Interface), name string) (int, int)
 		desc:    name,
 		t:       t,
 		data:    make([]int, n),
-		maxswap: 1 << 31,
+		maxswap: 1 << 40,
 	}
 
 	for i := 0; i < n; i++ {
 		td.data[i] = rand.Intn(n / 100)
+		// td.data[i] = rand.Intn(10 * n)
 	}
 	algo(&td)
 	return td.nswap, td.ncmp
 }
 
 func TestCountStableOps(t *testing.T) {
-	sizes := []int{1e3, 3e3, 1e4, 3e4, 1e5, 3e5, 1e6, 3e6, 1e7, 3e7, 1e8}
+	sizes := []int{1e3, 3e3, 1e4, 3e4, 1e5, 3e5, 1e6, 3e6, 1e7, 3e7, 1e8, 3e8}
 	if testing.Short() {
 		sizes = sizes[:7]
 	}
@@ -511,11 +512,12 @@ func TestCountStableOps(t *testing.T) {
 	for _, n := range sizes {
 		s, c := countOps(t, n, Stable, "Stable")
 		t.Logf("Stable: %8d elements, %11d Swap, %10d Less", n, s, c)
+		println("n =", n, "   swap =", s, "   less =", c)
 	}
 }
 
 func TestCountSortOps(t *testing.T) {
-	sizes := []int{1e3, 3e3, 1e4, 3e4, 1e5, 3e5, 1e6, 3e6, 1e7, 3e7, 1e8}
+	sizes := []int{1e3, 3e3, 1e4, 3e4, 1e5, 3e5, 1e6, 3e6, 1e7, 3e7, 1e8, 3e8}
 	if testing.Short() {
 		sizes = sizes[:7]
 	}
