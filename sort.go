@@ -317,9 +317,8 @@ func rotate(data Interface, a, m, b int) {
 // Stable sorts data while keeping the original order of equal elements.
 //
 // It makes one call to data.Len to determine n, O(n*log(n)) calls to
-// data.Less and O(n**1.15) calls to data.Swap.
-//
-// Swaps:  9.37 * n**1.153
+// data.Less and O(n**1.16) calls to data.Swap.  (Stable sorting 1e9 random
+// integers takes 30 times longer than sorting them with the unstable Sort.)
 func Stable(data Interface) {
 	mergeSort(data, 0, data.Len())
 }
