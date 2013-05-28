@@ -164,6 +164,10 @@ fit [1e4:] qma*x*log(x) "num-ops" using 1:7:($7/1000) via qma
 fit [1e4:] qual*x*log(x) "num-ops" using 1:8:($8/1000) via qual
 fit [1e4:] qua*x*log(x) "num-ops" using 1:9:($9/1000) via qua
 
+# k = Katajainen
+fit ka*x*log(x) "num-ops" using 1:10:($10/1000) via ka
+fit kl*x*log(x) "num-ops" using 1:11:($10/1000) via kl
+
 tmms = sprintf("Stable Multiple: %.1f n^{/*1.1 %.2f}", mmb,mmc)
 tmml = sprintf("Stable Multiple: %.2f n log n", mma)
 tmus = sprintf("Stable Unique: %.1f n^{/*1.1 %.2f}", mub,muc)
@@ -176,7 +180,7 @@ tqul = sprintf("Sort Unique: %.2f n log n", qua)
 
 set term pngcairo enhanced color solid font "Helvetica" fontscale 0.95 size 1000,800
 
-set label "Distrubutions:" at screen 0.75,0.22
+set label "Distributions:" at screen 0.75,0.22
 set label "Unique = rand.Intn(n * 10)" at screen 0.78,0.2
 set label "Multiple = rand.Intn(n / 100)" at screen 0.777,0.18
 
@@ -185,8 +189,9 @@ plot "num-ops" u 1:2 notit with points ls 1,  mmb*(x**mmc) tit tmms with lines l
      "" u 1:4 notit with points ls 2, mub*(x**muc) tit tmus with lines ls 2,         \
      "" u 1:6 notit with points ls 3, qmal*x*log(x) tit tqms with lines ls 3,         \
      "" u 1:8 notit with points ls 7, qual*x*log(x) tit tqus with lines ls 7, \
-     mmal*x*log(x) tit "n log n - fit to Stable"
-     
+     mmal*x*log(x) tit "n log n - fit to Stable", \
+     "" u 1:10 tit "Katajainen 4*-mergesort" with points ls 4, \
+     ka*x*log(x) tit "Katajainen n log n fit" with lines ls 4
 
 
 set ylabel "{/*1.25 # Less}" 
@@ -196,7 +201,8 @@ set out "num-less.png"
 plot "num-ops" u 1:3 notit with points ls 1, mma*x*log(x) tit tmml with lines ls 1, \
      "" u 1:5 notit with points ls 2, mua*x*log(x) tit tmul with lines ls 2, \
      "" u 1:7 notit with points ls 3, qma*x*log(x) tit tqml with lines ls 3, \
-     "" u 1:9 notit with points ls 7, qua*x*log(x) tit tqul with lines ls 7
+     "" u 1:9 notit with points ls 7, qua*x*log(x) tit tqul with lines ls 7, \
+     "" u 1:11 tit "Katajainen 4*-mergesort" with points ls 4
 
 unset logscale y
 set yrange [0:30]
