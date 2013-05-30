@@ -210,8 +210,8 @@ type testingData struct {
 	desc        string
 	t           *testing.T
 	data        []int
-	maxswap     int // number of swaps allowed
-	ncmp, nswap int
+	maxswap     int64 // number of swaps allowed
+	ncmp, nswap int64
 }
 
 func (d *testingData) Len() int { return len(d.data) }
@@ -317,7 +317,7 @@ func testBentleyMcIlroy(t *testing.T, sort func(Interface)) {
 					}
 
 					desc := fmt.Sprintf("n=%d m=%d dist=%s mode=%s", n, m, dists[dist], modes[mode])
-					d := &testingData{desc: desc, t: t, data: mdata[0:n], maxswap: n * lg(n) * 12 / 10}
+					d := &testingData{desc: desc, t: t, data: mdata[0:n], maxswap: int64(n * lg(n) * 12 / 10)}
 					sort(d)
 					// Uncomment if you are trying to improve the number of compares/swaps.
 					// t.Logf("%s: ncmp=%d, nswp=%d", desc, d.ncmp, d.nswap)
@@ -397,8 +397,6 @@ func TestAdversary(t *testing.T) {
 	Sort(d) // This should degenerate to heapsort.
 }
 
-// Stable sorting
-
 func TestStableInts(t *testing.T) {
 	data := ints
 	Stable(IntSlice(data[0:]))
@@ -415,13 +413,15 @@ type intPairs []struct {
 func (d intPairs) Len() int           { return len(d) }
 func (d intPairs) Less(i, j int) bool { return d[i].a < d[j].a }
 func (d intPairs) Swap(i, j int)      { d[i], d[j] = d[j], d[i] }
+
+// Record initial order in B.
 func (d intPairs) initB() {
 	for i := range d {
 		d[i].b = i
 	}
 }
 
-// check if the bs to one a are in order.
+// InOrder checks if a-equal elements were not reordered.
 func (d intPairs) inOrder() bool {
 	lastA, lastB := -1, 0
 	for i := 0; i < len(d); i++ {
@@ -485,54 +485,35 @@ func TestStability(t *testing.T) {
 	}
 }
 
-func countOps(t *testing.T, n int, algo func(Interface), name string) (int, int) {
-	td := testingData{
-		desc:    name,
-		t:       t,
-		data:    make([]int, n),
-		maxswap: 1 << 40,
-	}
+var countOpsSizes = []int{1e2, 3e2, 1e4, 3e4, 1e5, 3e5, 1e6, 3e6, 1e7}
 
-	for i := 0; i < n; i++ {
-		td.data[i] = rand.Intn(n / 100)
-		// td.data[i] = rand.Intn(10 * n)
-	}
-	algo(&td)
-	return td.nswap, td.ncmp
-}
-
-func TestCountStableOps(t *testing.T) {
-	sizes := []int{1e3, 3e3, 1e4, 3e4, 1e5, 3e5, 1e6, 3e6, 1e7, 3e7, 1e8, 3e8}
+func countOps(t *testing.T, algo func(Interface), name string) {
+	sizes := countOpsSizes
 	if testing.Short() {
-		sizes = sizes[:7]
+		sizes = sizes[:5]
 	}
 	if !testing.Verbose() {
-		t.Skip("counting skipped as nonverbose")
+		t.Skip("Counting skipped as non-verbose mode.")
 	}
 	for _, n := range sizes {
-		s, c := countOps(t, n, Stable, "Stable")
-		t.Logf("Stable: %8d elements, %11d Swap, %10d Less", n, s, c)
-		println("n =", n, "   swap =", s, "   less =", c)
+		td := testingData{
+			desc:    name,
+			t:       t,
+			data:    make([]int, n),
+			maxswap: 1 << 31,
+		}
+		for i := 0; i < n; i++ {
+			td.data[i] = rand.Intn(n / 2)
+		}
+		algo(&td)
+		t.Logf("%s %8d elements: %11d Swap, %10d Less", name, n, td.nswap, td.ncmp)
 	}
 }
 
-func TestCountSortOps(t *testing.T) {
-	sizes := []int{1e3, 3e3, 1e4, 3e4, 1e5, 3e5, 1e6, 3e6, 1e7, 3e7, 1e8, 3e8}
-	if testing.Short() {
-		sizes = sizes[:7]
-	}
-	if !testing.Verbose() {
-		t.Skip("counting skipped as nonverbose")
-	}
-	for _, n := range sizes {
-		s, c := countOps(t, n, Sort, "Stable")
-		t.Logf("Sort:   %8d elements, %11d Swap, %10d Less", n, s, c)
-	}
-}
+func TestCountStableOps(t *testing.T) { countOps(t, Stable, "Stable") }
+func TestCountSortOps(t *testing.T)   { countOps(t, Sort, "Sort  ") }
 
-// Benchmarks comparing Stable to Sort.
-
-func generate(i int, dist string) int {
+func generate(n, i int, dist string) int {
 	switch dist {
 	case "const":
 		return 9
@@ -541,9 +522,9 @@ func generate(i int, dist string) int {
 	case "decr":
 		return -i
 	case "rand":
-		return rand.Int()
+		return rand.Intn(5 * n)
 	case "some":
-		return rand.Intn(100)
+		return rand.Intn(n / 5)
 	case "sawt":
 		return i % 250
 	case "twas":
@@ -558,7 +539,7 @@ func bench(b *testing.B, size int, algo func(Interface), name, dist string) {
 	data := make(intPairs, size)
 	for i := 0; i < b.N; i++ {
 		for i := 0; i < len(data); i++ {
-			data[i].a = generate(i, dist)
+			data[i].a = generate(size, i, dist)
 		}
 		data.initB()
 		b.StartTimer()
@@ -612,3 +593,5 @@ func BenchmarkRandomStable100K(b *testing.B) { bench(b, 1e5, Stable, "Stable", "
 func BenchmarkRandomSort100K(b *testing.B)   { bench(b, 1e5, Sort, "Sort", "rand") }
 func BenchmarkRandomStable1M(b *testing.B)   { bench(b, 1e6, Stable, "Stable", "rand") }
 func BenchmarkRandomSort1M(b *testing.B)     { bench(b, 1e6, Sort, "Sort", "rand") }
+func BenchmarkRandomStable10M(b *testing.B)  { bench(b, 1e7, Stable, "Stable", "rand") }
+func BenchmarkRandomSort10M(b *testing.B)    { bench(b, 1e7, Sort, "Sort", "rand") }

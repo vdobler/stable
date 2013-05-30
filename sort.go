@@ -284,68 +284,13 @@ func Float64sAreSorted(a []float64) bool { return IsSorted(Float64Slice(a)) }
 // StringsAreSorted tests whether a slice of strings is sorted in increasing order.
 func StringsAreSorted(a []string) bool { return IsSorted(StringSlice(a)) }
 
-// Rotate two consecutives blocks u = data[a,m) and v = data[m,b) in data:
-// Data of the form 'xuvy' is changed to 'xvuy'.
-func rotate(data Interface, a, m, b int) {
-	i := m - a
-	if i == 0 {
-		return
-	}
-	j := b - m
-	if j == 0 {
-		return
-	}
-
-	if i == j {
-		swapRange(data, a, m, i)
-		return
-	}
-
-	p := a + i
-	for i != j {
-		if i > j {
-			swapRange(data, p-i, p, j)
-			i -= j
-		} else {
-			swapRange(data, p-i, p+j-i, i)
-			j -= i
-		}
-	}
-	swapRange(data, p-i, p, i)
-}
-
-var (
-	MergeSortCutoff    = 16
-	MergeSortBlocksize = 20
-)
-
 // Stable sorts data while keeping the original order of equal elements.
 //
 // It makes one call to data.Len to determine n, O(n*log(n)) calls to
 // data.Less and O(n**1.16) calls to data.Swap.
 func Stable(data Interface) {
-	mergeSort(data, 0, data.Len())
-}
-
-func mergeSort(data Interface, a, b int) {
-	if b-a <= 1 {
-		return
-	}
-
-	if b-a < MergeSortCutoff {
-		insertionSort(data, a, b)
-		return
-	}
-	m := a + (b-a)/2
-	mergeSort(data, a, m)
-	mergeSort(data, m, b)
-	symMerge(data, a, m, b)
-}
-
-// BUStable ist the bottom-up (non-recursive) version of Stable.
-func BUStable(data Interface) {
 	n := data.Len()
-	blockSize := MergeSortBlocksize
+	blockSize := 20
 	a, b := 0, blockSize
 	for b <= n {
 		insertionSort(data, a, b)
@@ -368,9 +313,10 @@ func BUStable(data Interface) {
 
 // SymMerge merges the two sorted subsequences data[a:m] and data[m:b] using
 // the SymMerge algorithm from Pok-Son Kim and Arne Kutzner, "Stable Minimum
-// Storage Merging by Symmetric Comparisons". In Susanne Albers and Tomasz
+// Storage Merging by Symmetric Comparisons", in Susanne Albers and Tomasz
 // Radzik, editors, Algorithms - ESA 2004, volume 3221 of Lecture Notes in
 // Computer Science, pages 714-723. Springer, 2004.
+// The recursion depth is bound by ceil(log(b-a)).
 func symMerge(data Interface, a, m, b int) {
 	if a >= m || m >= b {
 		return
@@ -406,4 +352,34 @@ func symMerge(data Interface, a, m, b int) {
 	rotate(data, start, m, end)
 	symMerge(data, a, start, mid)
 	symMerge(data, mid, end, b)
+}
+
+// Rotate two consecutives blocks u = data[a:m] and v = data[m:b] in data:
+// Data of the form 'xuvy' is changed to 'xvuy'.
+func rotate(data Interface, a, m, b int) {
+	i := m - a
+	if i == 0 {
+		return
+	}
+	j := b - m
+	if j == 0 {
+		return
+	}
+
+	if i == j {
+		swapRange(data, a, m, i)
+		return
+	}
+
+	p := a + i
+	for i != j {
+		if i > j {
+			swapRange(data, p-i, p, j)
+			i -= j
+		} else {
+			swapRange(data, p-i, p+j-i, i)
+			j -= i
+		}
+	}
+	swapRange(data, p-i, p, i)
 }
