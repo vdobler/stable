@@ -314,11 +314,15 @@ func rotate(data Interface, a, m, b int) {
 	swapRange(data, p-i, p, i)
 }
 
+var (
+	MergeSortCutoff    = 16
+	MergeSortBlocksize = 20
+)
+
 // Stable sorts data while keeping the original order of equal elements.
 //
 // It makes one call to data.Len to determine n, O(n*log(n)) calls to
-// data.Less and O(n**1.16) calls to data.Swap.  (Stable sorting 1e9 random
-// integers takes 30 times longer than sorting them with the unstable Sort.)
+// data.Less and O(n**1.16) calls to data.Swap.
 func Stable(data Interface) {
 	mergeSort(data, 0, data.Len())
 }
@@ -328,7 +332,7 @@ func mergeSort(data Interface, a, b int) {
 		return
 	}
 
-	if b-a < 7 {
+	if b-a < MergeSortCutoff {
 		insertionSort(data, a, b)
 		return
 	}
@@ -338,24 +342,46 @@ func mergeSort(data Interface, a, b int) {
 	symMerge(data, a, m, b)
 }
 
-// SymMerge merges the two sorted subsequences data[first1,first2) and
-// data[first2,last) using the SymMerge algorithm from: Pok-Son Kim and
-// Arne Kutzner, "Stable Minimum Storage Merging by Symmetric Comparisons"
-// (2004?)
-// It needs O(m*log(n/m+1)) comparisons and its recursion depth is bound
-// by ceil(log(n+m)) where m <= n are the length of the both sequences to
-// merge.
-func symMerge(data Interface, first1, first2, last int) {
-	if first1 >= first2 || first2 >= last {
+// BUStable ist the bottom-up (non-recursive) version of Stable.
+func BUStable(data Interface) {
+	n := data.Len()
+	blockSize := MergeSortBlocksize
+	a, b := 0, blockSize
+	for b <= n {
+		insertionSort(data, a, b)
+		a = b
+		b += blockSize
+	}
+	insertionSort(data, a, n)
+
+	for blockSize < n {
+		a, b = 0, 2*blockSize
+		for b <= n {
+			symMerge(data, a, a+blockSize, b)
+			a = b
+			b += 2 * blockSize
+		}
+		symMerge(data, a, a+blockSize, n)
+		blockSize *= 2
+	}
+}
+
+// SymMerge merges the two sorted subsequences data[a:m] and data[m:b] using
+// the SymMerge algorithm from Pok-Son Kim and Arne Kutzner, "Stable Minimum
+// Storage Merging by Symmetric Comparisons". In Susanne Albers and Tomasz
+// Radzik, editors, Algorithms - ESA 2004, volume 3221 of Lecture Notes in
+// Computer Science, pages 714-723. Springer, 2004.
+func symMerge(data Interface, a, m, b int) {
+	if a >= m || m >= b {
 		return
 	}
 
-	m := (first1 + last) / 2
-	n := m + first2
+	mid := a + (b-a)/2
+	n := mid + m
 	start := 0
-	if first2 > m {
-		start = n - last
-		r, p := m, n-1
+	if m > mid {
+		start = n - b
+		r, p := mid, n-1
 		for start < r {
 			c := (start + r) / 2
 			if !data.Less(p-c, c) {
@@ -365,8 +391,8 @@ func symMerge(data Interface, first1, first2, last int) {
 			}
 		}
 	} else {
-		start = first1
-		r, p := first2, n-1
+		start = a
+		r, p := m, n-1
 		for start < r {
 			c := (start + r) / 2
 			if !data.Less(p-c, c) {
@@ -377,7 +403,7 @@ func symMerge(data Interface, first1, first2, last int) {
 		}
 	}
 	end := n - start
-	rotate(data, start, first2, end)
-	symMerge(data, first1, start, m)
-	symMerge(data, m, end, last)
+	rotate(data, start, m, end)
+	symMerge(data, a, start, mid)
+	symMerge(data, mid, end, b)
 }
