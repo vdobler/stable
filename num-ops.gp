@@ -150,24 +150,53 @@ b = 7.48996227352459
 c = 1.16239563551843
 d = 1.001
 
+fitlow = 1e3
+
 # m = Merge Sort (Stable)
-fit [1e4:] mmb*(x**mmc) "num-ops" using 1:2:($2/1000) via mmb,mmc
-fit [1e4:] mmal*x*log(x) "num-ops" using 1:2:($2/1000) via mmal
-fit [1e4:] mma*x*log(x) "num-ops" using 1:3:($3/1000) via mma
-fit [1e4:] mub*(x**muc) "num-ops" using 1:4:($4/1000) via mub,muc
-fit [1e4:] mual*x*log(x) "num-ops" using 1:4:($4/1000) via mual
-fit [1e4:] mua*x*log(x) "num-ops" using 1:5:($5/1000) via mua
+fit [fitlow:] mmb*(x**mmc) "num-ops" using 1:2:($2/1000) via mmb,mmc
+fit [fitlow:] mmal*x*log(x) "num-ops" using 1:2:($2/1000) via mmal
+fit [fitlow:] mma*x*log(x) "num-ops" using 1:3:($3/1000) via mma
+fit [fitlow:] mub*(x**muc) "num-ops" using 1:4:($4/1000) via mub,muc
+fit [fitlow:] mual*x*log(x) "num-ops" using 1:4:($4/1000) via mual
+fit [fitlow:] mua*x*log(x) "num-ops" using 1:5:($5/1000) via mua
+
+fit [fitlow:] Ha*x*log(x)*log(x) "num-ops" using 1:2:($2/1000) via Ha
+tha = sprintf("Stable: %.2f n log^2 n", Ha)
+
 
 # q = Quick Sort (Sort)
-fit [1e4:] qmal*x*log(x) "num-ops" using 1:6:($6/1000) via qmal
-fit [1e4:] qma*x*log(x) "num-ops" using 1:7:($7/1000) via qma
-fit [1e4:] qual*x*log(x) "num-ops" using 1:8:($8/1000) via qual
-fit [1e4:] qua*x*log(x) "num-ops" using 1:9:($9/1000) via qua
+fit [fitlow:] qmal*x*log(x) "num-ops" using 1:6:($6/1000) via qmal
+fit [fitlow:] qma*x*log(x) "num-ops" using 1:7:($7/1000) via qma
+fit [fitlow:] qual*x*log(x) "num-ops" using 1:8:($8/1000) via qual
+fit [fitlow:] qua*x*log(x) "num-ops" using 1:9:($9/1000) via qua
 
 # k = Katajainen
 fit ka*x*log(x) "num-ops" using 1:10:($10/1000) via ka
 fit kl*x*log(x) "num-ops" using 1:11:($10/1000) via kl
+tka = sprintf("Katajainen 4*: %.2f n log n", ka)
 
+tmms = sprintf("Stable: %.1f n^{/*1.1 %.2f}", mmb,mmc)
+tmml = sprintf("Stable: %.2f n log n", mma)
+
+tqms = sprintf("Sort: %.2f n log n", qmal)
+tqml = sprintf("Sort: %.2f n log n", qma)
+
+set term pngcairo enhanced color solid font "Helvetica" fontscale 0.95 size 1000,800
+
+set label "Multiple = rand.Intn(n / 100)" at screen 0.777,0.18
+
+set out "num-swaps.png"
+plot "num-ops" u 1:6 notit with points ls 2 ps 2, qmal*x*log(x) tit tqms with lines ls 2,         \
+     Ha*x*log(x)*log(x) tit tha with lines ls 1, \
+     mmb*(x**mmc) tit tmms with lines ls 3, \
+     "" u 1:10 notit with points ls 5 ps 0.7, ka*x*log(x) tit tka with lines ls 5, \
+     "num-ops" u 1:2 notit with points ls 1 ps 2
+
+print "Swaps: Sym/Ka = ", (Ha*1e9*(log(1e9))**2) / (ka*1e9*log(1e9))
+
+
+
+set out "num-all-swaps.png"
 tmms = sprintf("Stable Multiple: %.1f n^{/*1.1 %.2f}", mmb,mmc)
 tmml = sprintf("Stable Multiple: %.2f n log n", mma)
 tmus = sprintf("Stable Unique: %.1f n^{/*1.1 %.2f}", mub,muc)
@@ -178,20 +207,18 @@ tqml = sprintf("Sort Multiple: %.2f n log n", qma)
 tqus = sprintf("Sort Unique: %.2f n log n", qual)
 tqul = sprintf("Sort Unique: %.2f n log n", qua)
 
-set term pngcairo enhanced color solid font "Helvetica" fontscale 0.95 size 1000,800
-
 set label "Distributions:" at screen 0.75,0.22
 set label "Unique = rand.Intn(n * 10)" at screen 0.78,0.2
-set label "Multiple = rand.Intn(n / 100)" at screen 0.777,0.18
 
-set out "num-swaps.png"
 plot "num-ops" u 1:2 notit with points ls 1,  mmb*(x**mmc) tit tmms with lines ls 1, \
      "" u 1:4 notit with points ls 2, mub*(x**muc) tit tmus with lines ls 2,         \
      "" u 1:6 notit with points ls 3, qmal*x*log(x) tit tqms with lines ls 3,         \
      "" u 1:8 notit with points ls 7, qual*x*log(x) tit tqus with lines ls 7, \
      mmal*x*log(x) tit "n log n - fit to Stable", \
      "" u 1:10 tit "Katajainen 4*-mergesort" with points ls 4, \
-     ka*x*log(x) tit "Katajainen n log n fit" with lines ls 4
+     ka*x*log(x) tit "Katajainen n log n fit" with lines ls 4, \
+     Ha*x*log(x)*log(x) tit "n log^2n" with points ls 6 ps 1
+
 
 
 set ylabel "{/*1.25 # Less}" 

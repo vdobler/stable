@@ -485,7 +485,7 @@ func TestStability(t *testing.T) {
 	}
 }
 
-var countOpsSizes = []int{1e2, 3e2, 1e4, 3e4, 1e5, 3e5, 1e6, 3e6, 1e7}
+var countOpsSizes = []int{1e2, 3e2, 1e3, 3e3, 1e4, 3e4, 1e5, 3e5, 1e6, 3e6, 1e7}
 
 func countOps(t *testing.T, algo func(Interface), name string) {
 	sizes := countOpsSizes
@@ -503,7 +503,7 @@ func countOps(t *testing.T, algo func(Interface), name string) {
 			maxswap: 1 << 31,
 		}
 		for i := 0; i < n; i++ {
-			td.data[i] = rand.Intn(n / 2)
+			td.data[i] = rand.Intn(n / 20)
 		}
 		algo(&td)
 		t.Logf("%s %8d elements: %11d Swap, %10d Less", name, n, td.nswap, td.ncmp)
