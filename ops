@@ -1,0 +1,16 @@
+#          N                        Stable                            Sort
+       10 elements:          23 Swap,         31 Less            8 Swap,         22 Less
+       30 elements:         142 Swap,        159 Less           46 Swap,         97 Less
+      100 elements:         895 Swap,        798 Less          193 Swap,        562 Less
+      300 elements:        3929 Swap,       2995 Less          693 Swap,       2410 Less
+     1000 elements:       19786 Swap,      12332 Less         2607 Swap,      11281 Less
+     3000 elements:       82064 Swap,      43101 Less         9210 Swap,      39858 Less
+    10000 elements:      348803 Swap,     166239 Less        35229 Swap,     157083 Less
+    30000 elements:     1340547 Swap,     558522 Less       116474 Swap,     552324 Less
+   100000 elements:     5780671 Swap,    2084568 Less       429915 Swap,    2122283 Less
+   300000 elements:    20453897 Swap,    6867857 Less      1410159 Swap,    7045815 Less
+  1000000 elements:    84467919 Swap,   25113959 Less      5129459 Swap,   26170848 Less
+  3000000 elements:   303515183 Swap,   81442768 Less     16522594 Swap,   86145644 Less
+ 10000000 elements:  1147443701 Swap,  294060710 Less     59369928 Swap,  314147639 Less
+ 30000000 elements:  3990656594 Swap,  942694799 Less    189553648 Swap, 1018243129 Less
+100000000 elements: 15634752504 Swap, 3365252564 Less    672667953 Swap, 3678787054 Less
