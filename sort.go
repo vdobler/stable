@@ -287,7 +287,7 @@ func StringsAreSorted(a []string) bool { return IsSorted(StringSlice(a)) }
 // Stable sorts data while keeping the original order of equal elements.
 //
 // It makes one call to data.Len to determine n, O(n*log(n)) calls to
-// data.Less and O(n**1.16) calls to data.Swap.
+// data.Less and O(n*log(n)*log(n)) calls to data.Swap.
 func Stable(data Interface) {
 	n := data.Len()
 	blockSize := 20
@@ -316,7 +316,16 @@ func Stable(data Interface) {
 // Storage Merging by Symmetric Comparisons", in Susanne Albers and Tomasz
 // Radzik, editors, Algorithms - ESA 2004, volume 3221 of Lecture Notes in
 // Computer Science, pages 714-723. Springer, 2004.
-// The recursion depth is bound by ceil(log(b-a)).
+//
+// Let M = m-a and N = b-n. Wolog M < N.
+// The recursion depth is bound by ceil(log(N+M)).
+// The algorithm needs O(M*log(N/M + 1)) calls to data.Less.
+// The algorithm needs O((M+N)*log(M)) calls to data.Swap.
+//
+// The paper gives O((M+N)*log(M)) as the number of assignments assuming a
+// rotation algorithm wich uses O(M+N+gcd(M+N)) assignments. The argumentation
+// in the paper carries through for Swap operations, especially as the block
+// swapping rotate uses only O(M+N) Swaps.
 func symMerge(data Interface, a, m, b int) {
 	if a >= m || m >= b {
 		return
@@ -355,7 +364,8 @@ func symMerge(data Interface, a, m, b int) {
 }
 
 // Rotate two consecutives blocks u = data[a:m] and v = data[m:b] in data:
-// Data of the form 'xuvy' is changed to 'xvuy'.
+// Data of the form 'x u v y' is changed to 'x v u y'.
+// Rotate performs at most b-a many calls to data.Swap.
 func rotate(data Interface, a, m, b int) {
 	i := m - a
 	if i == 0 {
@@ -383,3 +393,64 @@ func rotate(data Interface, a, m, b int) {
 	}
 	swapRange(data, p-i, p, i)
 }
+
+/*
+
+Number of operations for block swapping rotation
+
+Algorithm: Wolog assume |u| < |v|.
+  Terminates once |u| = |v| using |u| Swaps.
+  Swap   u vl vr   to   vr vl u   using |u| Swaps.
+  Block u is now in the proper position and order.
+  Iterate on vr vl with |vr| = |u|.
+
+On each (nonterminating) iteration |u| elements are brought to their
+final position using |u| Swaps and the process continues with the
+remaining |v|-|u| elements.
+The terminating iteration requires at most |u| Swaps.
+So each Swap puts one new element into its correct, final position.
+Elements which reach their final position are no longer moved.
+Thus block swapping rotation needs |u|+|v| calls to Swaps.
+This is best possible as each element might need a move.
+
+Pay attention when comparing to other optimal algorithms which
+typicall count the number of assignments instead of swaps:
+E.g. the optimal algorithm of Dudzinski and Dydek for in-place
+rotations uses O(u + v + gcd(u,v)) assignments which is
+better than our O(3 * (u+v)) as gcd(u,v) <= u.
+
+
+Analysis of stable sorting by SymMerge and BlockSwap rotations
+
+SymMerg complexity for same size input M = N:
+Calls to Less:  O(M*log(N/M+1)) = O(N*log(2)) = O(N)
+Calls to Swap:  O((M+N)*log(M)) = O(2*N*log(N)) = O(N*log(N))
+
+Let n = data.Len(). Assume n = 2^k.
+
+Plain merge sort performs log(n) = k iterations. (Not nitpicking
+on a -1 or taht like in the following).
+On iteration i the algorithm merges 2^(k-i) blocks, each of size 2^i.
+
+Thus iteration i of merge sort performs:
+Calls to Less  O(2^(k-i) * 2^i) = O(2^k) = O(2^log(n)) = O(n)
+Calls to Swap  O(2^(k-i) * 2^i * log(2^i)) = O(2^k * i) = O(n*i)
+
+In total k = log(n) iterations are performed; so in total:
+Calls to Less O(log(n) * n)
+Calls to Swap O(n + 2*n + 3*n + ... + (k-1)*n + k*n)
+   = O((k/2) * k * n) = O(n * k^2) = O(n * log^2(n))
+
+Most probably this is not completely wrong for
+arbitary n = 2^k + p.
+
+Influence of insertion sort for inital blocks of 16 elements:
+Insertion sort is O(n^2) on Swap and Less (?), thus O(16*16) per block
+at n/16 blocks:  O(16*n) Swaps and Less during insertion sort phase.
+Merge sort iterations start at i=4:
+Calls to Less O((log(n)-4) * n + 16*n) = O(log(n)*n + 12*n)
+   = O(n * log(n))
+Calls to Swap O(n * log^2(n) - 10*n) = O(n * log^2(n))
+Again, this should not be completely wrong for arbitary cutoff.
+
+*/
