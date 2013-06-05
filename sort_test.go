@@ -535,9 +535,9 @@ func bench(b *testing.B, size int, algo func(Interface), name string) {
 	}
 }
 
-func BenchmarkStable1e2(b *testing.B) { bench(b, 1e2, Stable, "Stable") }
 func BenchmarkSort1e2(b *testing.B)   { bench(b, 1e2, Sort, "Sort") }
-func BenchmarkStable1e4(b *testing.B) { bench(b, 1e4, Stable, "Stable") }
+func BenchmarkStable1e2(b *testing.B) { bench(b, 1e2, Stable, "Stable") }
 func BenchmarkSort1e4(b *testing.B)   { bench(b, 1e4, Sort, "Sort") }
-func BenchmarkStable1e6(b *testing.B) { bench(b, 1e6, Stable, "Stable") }
+func BenchmarkStable1e4(b *testing.B) { bench(b, 1e4, Stable, "Stable") }
 func BenchmarkSort1e6(b *testing.B)   { bench(b, 1e6, Sort, "Sort") }
+func BenchmarkStable1e6(b *testing.B) { bench(b, 1e6, Stable, "Stable") }
