@@ -1,5 +1,4 @@
 #          N                        Stable                            Sort
-       10 elements:          23 Swap,         31 Less            8 Swap,         22 Less
        30 elements:         142 Swap,        159 Less           46 Swap,         97 Less
       100 elements:         895 Swap,        798 Less          193 Swap,        562 Less
       300 elements:        3929 Swap,       2995 Less          693 Swap,       2410 Less

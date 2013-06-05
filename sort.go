@@ -284,6 +284,32 @@ func Float64sAreSorted(a []float64) bool { return IsSorted(Float64Slice(a)) }
 // StringsAreSorted tests whether a slice of strings is sorted in increasing order.
 func StringsAreSorted(a []string) bool { return IsSorted(StringSlice(a)) }
 
+// Notes on stable sorting:
+// The used algorithms are simple and provable correct on all input and use
+// only logarithmic additional stack space.  They perform well if compared
+// experimentaly to other stable in-place sorting algorithms.
+//
+// Remarks on other algoritms evaluated:
+//  - GCC's 4.6.3 stable_sort with merge_without_buffer from libstdc++:
+//    Not faster.
+//  - GCC's __rotate for block rotations: Not faster.
+//  - "Practical in-place mergesort" from  Jyrki Katajainen, Tomi A. Pasanen
+//    and Jukka Teuhola; Nordic Journal of Computing 3,1 (1996), 27-40:
+//    The given algorithms are in-place, number of Swap and Assignments
+//    grow as n log n but the algorithm is not stable.
+//  - "Fast Stable In-Plcae Sorting with O(n) Data Moves" J.I. Munro and
+//    V. Raman in Algorithmica (1996) 16, 115-160:
+//    This algorithm either needs additional 2n bits or works only if there
+//    are enough different elements available to encode some permutations
+//    which have to be undone later (so not stable an any input).
+//  - All the optimal in-place sorting/merging algorithms I found are either
+//    unstable or rely on enough different elements in each step to encode the
+//    performed block rearrangements. See also "In-Place Merging Algorithms",
+//    Denham Coates-Evely, Department of Computer Science, Kings College,
+//    January 2004 and the reverences in there.
+//  - Often "optimal" algorithms are optimal in the number of assignments
+//    but Interface has only Swap as operation.
+
 // Stable sorts data while keeping the original order of equal elements.
 //
 // It makes one call to data.Len to determine n, O(n*log(n)) calls to
@@ -395,8 +421,10 @@ func rotate(data Interface, a, m, b int) {
 }
 
 /*
+Complexity of Stable Sorting
 
-Number of operations for block swapping rotation
+
+Complexity of block swapping rotation
 
 Algorithm: Wolog assume |u| < |v|.
   Terminates once |u| = |v| using |u| Swaps.
@@ -404,7 +432,7 @@ Algorithm: Wolog assume |u| < |v|.
   Block u is now in the proper position and order.
   Iterate on vr vl with |vr| = |u|.
 
-On each (nonterminating) iteration |u| elements are brought to their
+On each (non-terminating) iteration |u| elements are brought to their
 final position using |u| Swaps and the process continues with the
 remaining |v|-|u| elements.
 The terminating iteration requires at most |u| Swaps.
@@ -414,22 +442,24 @@ Thus block swapping rotation needs |u|+|v| calls to Swaps.
 This is best possible as each element might need a move.
 
 Pay attention when comparing to other optimal algorithms which
-typicall count the number of assignments instead of swaps:
+typically count the number of assignments instead of swaps:
 E.g. the optimal algorithm of Dudzinski and Dydek for in-place
 rotations uses O(u + v + gcd(u,v)) assignments which is
 better than our O(3 * (u+v)) as gcd(u,v) <= u.
 
 
-Analysis of stable sorting by SymMerge and BlockSwap rotations
+Stable sorting by SymMerge and BlockSwap rotations
 
 SymMerg complexity for same size input M = N:
 Calls to Less:  O(M*log(N/M+1)) = O(N*log(2)) = O(N)
 Calls to Swap:  O((M+N)*log(M)) = O(2*N*log(N)) = O(N*log(N))
 
+(The following argument does not fuzz over a missing -1 or
+other stuff which does not impact the final result).
+
 Let n = data.Len(). Assume n = 2^k.
 
-Plain merge sort performs log(n) = k iterations. (Not nitpicking
-on a -1 or taht like in the following).
+Plain merge sort performs log(n) = k iterations.
 On iteration i the algorithm merges 2^(k-i) blocks, each of size 2^i.
 
 Thus iteration i of merge sort performs:
@@ -441,16 +471,14 @@ Calls to Less O(log(n) * n)
 Calls to Swap O(n + 2*n + 3*n + ... + (k-1)*n + k*n)
    = O((k/2) * k * n) = O(n * k^2) = O(n * log^2(n))
 
-Most probably this is not completely wrong for
-arbitary n = 2^k + p.
 
-Influence of insertion sort for inital blocks of 16 elements:
-Insertion sort is O(n^2) on Swap and Less (?), thus O(16*16) per block
-at n/16 blocks:  O(16*n) Swaps and Less during insertion sort phase.
-Merge sort iterations start at i=4:
-Calls to Less O((log(n)-4) * n + 16*n) = O(log(n)*n + 12*n)
+Above results should generalize to arbitrary n = 2^k + p
+and should not be influenced by the initial insertion sort phase:
+Insertion sort is O(n^2) on Swap and Less, thus O(bs^2) per block of
+size bs at n/bs blocks:  O(bs*n) Swaps and Less during insertion sort.
+Merge sort iterations start at i = log(bs). With t = log(bs) constant:
+Calls to Less O((log(n)-t) * n + bs*n) = O(log(n)*n + (bs-t)*n)
    = O(n * log(n))
-Calls to Swap O(n * log^2(n) - 10*n) = O(n * log^2(n))
-Again, this should not be completely wrong for arbitary cutoff.
+Calls to Swap O(n * log^2(n) - (t^2+t)/2*n) = O(n * log^2(n))
 
 */
