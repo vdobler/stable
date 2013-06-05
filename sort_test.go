@@ -485,7 +485,7 @@ func TestStability(t *testing.T) {
 	}
 }
 
-var countOpsSizes = []int{3e8 /*, 1e2, 3e2, 1e3, 3e3, 1e4, 3e4, 1e5, 3e5, 1e6, 3e6, 1e7, 3e7, 1e8, 3e8 */}
+var countOpsSizes = []int{1e2, 3e2, 1e3, 3e3, 1e4, 3e4, 1e5, 3e5, 1e6, 3e6, 1e7}
 
 func countOps(t *testing.T, algo func(Interface), name string) {
 	sizes := countOpsSizes
@@ -500,7 +500,7 @@ func countOps(t *testing.T, algo func(Interface), name string) {
 			desc:    name,
 			t:       t,
 			data:    make([]int, n),
-			maxswap: 1 << 40,
+			maxswap: 1 << 31,
 		}
 		for i := 0; i < n; i++ {
 			td.data[i] = rand.Intn(n / 5)
@@ -513,85 +513,31 @@ func countOps(t *testing.T, algo func(Interface), name string) {
 func TestCountStableOps(t *testing.T) { countOps(t, Stable, "Stable") }
 func TestCountSortOps(t *testing.T)   { countOps(t, Sort, "Sort  ") }
 
-func generate(n, i int, dist string) int {
-	switch dist {
-	case "const":
-		return 9
-	case "incr":
-		return i
-	case "decr":
-		return -i
-	case "rand":
-		return rand.Intn(5 * n)
-	case "some":
-		return rand.Intn(n / 5)
-	case "sawt":
-		return i % 250
-	case "twas":
-		return 250 - (i % 250)
-	default:
-		panic(dist)
-	}
-}
-
-func bench(b *testing.B, size int, algo func(Interface), name, dist string) {
+func bench(b *testing.B, size int, algo func(Interface), name string) {
 	b.StopTimer()
 	data := make(intPairs, size)
 	for i := 0; i < b.N; i++ {
-		for i := 0; i < len(data); i++ {
-			data[i].a = generate(size, i, dist)
-		}
-		data.initB()
-		b.StartTimer()
-		algo(data)
-		b.StopTimer()
-		if !IsSorted(data) {
-			b.Errorf("%s did not sort %d %s distributed ints", name, size, dist)
-		}
-		if name == "Stable" && !data.inOrder() {
-			b.Errorf("%s unstable on %d %s distributed ints", name, size, dist)
+		for n := size - 3; n <= size+3; n++ {
+			for i := 0; i < len(data); i++ {
+				data[i].a = rand.Intn(n / 5)
+			}
+			data.initB()
+			b.StartTimer()
+			algo(data)
+			b.StopTimer()
+			if !IsSorted(data) {
+				b.Errorf("%s did not sort %d ints", name, n)
+			}
+			if name == "Stable" && !data.inOrder() {
+				b.Errorf("%s unstable on %d ints", name, n)
+			}
 		}
 	}
 }
 
-// Stable sorting of unique data is pretty much pointless: If no equal
-// elements are present in the sequence, then there is no need to keep
-// their initial order.  Thus the big comparison between Stable and Sort
-// is done on a random distribution of "some" (a hundred different)
-// values.
-func BenchmarkSomeStable1K(b *testing.B)   { bench(b, 1e3, Stable, "Stable", "some") }
-func BenchmarkSomeSort1K(b *testing.B)     { bench(b, 1e3, Sort, "Sort", "some") }
-func BenchmarkSomeStable10K(b *testing.B)  { bench(b, 1e4, Stable, "Stable", "some") }
-func BenchmarkSomeSort10K(b *testing.B)    { bench(b, 1e4, Sort, "Sort", "some") }
-func BenchmarkSomeStable100K(b *testing.B) { bench(b, 1e5, Stable, "Stable", "some") }
-func BenchmarkSomeSort100K(b *testing.B)   { bench(b, 1e5, Sort, "Sort", "some") }
-func BenchmarkSomeStable1M(b *testing.B)   { bench(b, 1e6, Stable, "Stable", "some") }
-func BenchmarkSomeSort1M(b *testing.B)     { bench(b, 1e6, Sort, "Sort", "some") }
-func BenchmarkSomeStable10M(b *testing.B)  { bench(b, 1e7, Stable, "Stable", "some") }
-func BenchmarkSomeSort10M(b *testing.B)    { bench(b, 1e7, Sort, "Sort", "some") }
-
-// Some pathological cases
-func BenchmarkConstStable100K(b *testing.B) { bench(b, 1e5, Stable, "Stable", "const") }
-func BenchmarkConstSort100K(b *testing.B)   { bench(b, 1e5, Sort, "Sort", "const") }
-func BenchmarkIncrStable100K(b *testing.B)  { bench(b, 1e5, Stable, "Stable", "incr") }
-func BenchmarkIncrSort100K(b *testing.B)    { bench(b, 1e5, Sort, "Sort", "incr") }
-func BenchmarkDecrStable100K(b *testing.B)  { bench(b, 1e5, Stable, "Stable", "decr") }
-func BenchmarkDecrSort100K(b *testing.B)    { bench(b, 1e5, Sort, "Sort", "decr") }
-func BenchmarkSawtStable100K(b *testing.B)  { bench(b, 1e5, Stable, "Stable", "sawt") }
-func BenchmarkSawtSort100K(b *testing.B)    { bench(b, 1e5, Sort, "Sort", "sawt") }
-func BenchmarkTwasStable100K(b *testing.B)  { bench(b, 1e5, Stable, "Stable", "twas") }
-func BenchmarkTwasSort100K(b *testing.B)    { bench(b, 1e5, Sort, "Sort", "twas") }
-
-// Full random data with only a few equal elements.
-func BenchmarkRandomStable100(b *testing.B)  { bench(b, 1e2, Stable, "Stable", "rand") }
-func BenchmarkRandomSort100(b *testing.B)    { bench(b, 1e2, Sort, "Sort", "rand") }
-func BenchmarkRandomStable1K(b *testing.B)   { bench(b, 1e3, Stable, "Stable", "rand") }
-func BenchmarkRandomSort1K(b *testing.B)     { bench(b, 1e3, Sort, "Sort", "rand") }
-func BenchmarkRandomStable10K(b *testing.B)  { bench(b, 1e4, Stable, "Stable", "rand") }
-func BenchmarkRandomSort10K(b *testing.B)    { bench(b, 1e4, Sort, "Sort", "rand") }
-func BenchmarkRandomStable100K(b *testing.B) { bench(b, 1e5, Stable, "Stable", "rand") }
-func BenchmarkRandomSort100K(b *testing.B)   { bench(b, 1e5, Sort, "Sort", "rand") }
-func BenchmarkRandomStable1M(b *testing.B)   { bench(b, 1e6, Stable, "Stable", "rand") }
-func BenchmarkRandomSort1M(b *testing.B)     { bench(b, 1e6, Sort, "Sort", "rand") }
-func BenchmarkRandomStable10M(b *testing.B)  { bench(b, 1e7, Stable, "Stable", "rand") }
-func BenchmarkRandomSort10M(b *testing.B)    { bench(b, 1e7, Sort, "Sort", "rand") }
+func BenchmarkStable1e2(b *testing.B) { bench(b, 1e2, Stable, "Stable") }
+func BenchmarkSort1e2(b *testing.B)   { bench(b, 1e2, Sort, "Sort") }
+func BenchmarkStable1e4(b *testing.B) { bench(b, 1e4, Stable, "Stable") }
+func BenchmarkSort1e4(b *testing.B)   { bench(b, 1e4, Sort, "Sort") }
+func BenchmarkStable1e6(b *testing.B) { bench(b, 1e6, Stable, "Stable") }
+func BenchmarkSort1e6(b *testing.B)   { bench(b, 1e6, Sort, "Sort") }
